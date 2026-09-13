@@ -1,39 +1,26 @@
 <div align="center">
 
-<!-- HERO BANNER -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0f172a,50:1e3a8a,100:0ea5e9&height=220&section=header&text=PayFlow%20UPI&fontSize=70&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=A%20Simulated%20UPI%20Transaction%20Engine%20Built%20on%20Flask%20%26%20MySQL&descAlignY=60&descSize=16&descColor=93c5fd"/>
+# 💳 PayFlow
+### UPI Transaction Management System
 
-<p>
-<img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
-<img src="https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white"/>
-<img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
-<img src="https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white"/>
-</p>
+> *"Every rupee that moves through this app is fake. Every guarantee that it moves correctly is real."*
 
-<p>
-<img src="https://img.shields.io/badge/CDAC%20Kharghar-2026-DC2626?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/PGCP%20--%20BDA-Minor%20Project-1D4ED8?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/ACID-Compliant-22C55E?style=for-the-badge"/>
-<img src="https://img.shields.io/badge/Team-7%20Builders-F59E0B?style=for-the-badge"/>
-</p>
+A simulated UPI transaction platform built to demonstrate core DBMS concepts inside a working financial workflow — ACID transactions, optimistic + row-level locking, relational modelling, triggers, views, stored procedures, authentication, and transaction analytics.
 
-<br/>
+**Built with**
+`Python` `Flask` `MySQL 8` `SQLAlchemy` `PyMySQL`
 
-> **"Every rupee that moves through this app is fake. Every guarantee that it moves correctly is real."**
-
-A weekend build that turns lecture-slide DBMS concepts — ACID, normalization, triggers, concurrency — into something you can actually click a button and watch happen.
-
-<br/>
+[Overview](#-overview) • [Features](#-key-features) • [Architecture](#-system-architecture) • [Database](#-database-design) • [Setup](#-getting-started) • [Testing](#-testing)
 
 </div>
 
 ---
 
-## 🧠 What is PayFlow UPI, actually?
+## 📖 Overview
 
-PayFlow is a **simulated** UPI-style payment platform — dummy users, dummy bank accounts, dummy money. There are no real payment rails and no real bank integration here, and that's on purpose: the point of this project is to *prove out relational database design and transaction handling*, not to compete with a fintech startup.
+PayFlow is **simulated** end to end — dummy users, dummy bank accounts, dummy money, no real payment rails, no real bank integration. That's a deliberate scope decision, not a shortcut: the goal is to prove out relational database design and transaction handling in a working system, not to build a fintech product.
 
-What it does do, for real:
+What it actually does:
 - 🔐 Register & log in with hashed passwords and rate-limited login attempts
 - 🏦 Link bank accounts and mint UPI IDs against them
 - 💸 Send money with genuine `BEGIN / COMMIT / ROLLBACK` guarantees — a failed transfer never leaves one account debited without the other credited
@@ -41,65 +28,103 @@ What it does do, for real:
 - 📊 Pull transaction history, daily summaries, and bank-wise reports straight from MySQL views
 - 🛡️ Get flagged automatically for suspicious activity — large amounts, rapid-fire sends, repeated failures
 
-<details>
-<summary><b>🤔 Why simulate instead of just building CRUD screens?</b></summary>
-<br/>
-Because a CRUD app proves you can call <code>INSERT</code> and <code>SELECT</code>. A payment simulator with real transaction boundaries, row-level locking, and optimistic concurrency control proves you understand <i>why</i> a database exists in the first place. That distinction is the whole grading rubric.
-</details>
+---
+
+## 🚀 Key Features
+
+| | |
+|---|---|
+| **Secure Auth** | Password hashing, rate-limited login, CSRF-protected forms |
+| **Real ACID Transfers** | Every rupee moved inside a genuine database transaction |
+| **Optimistic Concurrency** | `version` column on `bank_accounts` prevents two simultaneous transfers from racing each other |
+| **Fraud Detection** | Pluggable rule engine — high value, rapid-fire, repeated failures |
+| **Full Audit Trail** | Every transaction and status change logged via triggers |
+| **Analytics-Ready** | Daily volume, bank-wise balances, and per-user summaries via SQL views |
 
 ---
 
-## 📐 System Architecture
+## 🏗 System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    THREE-TIER ARCHITECTURE                          │
-├───────────────────┬──────────────────────┬──────────────────────────┤
-│   PRESENTATION    │     APPLICATION      │        DATABASE          │
-│   LAYER           │     LAYER (Flask)    │        LAYER (MySQL)      │
-├───────────────────┼──────────────────────┼──────────────────────────┤
-│  HTML + Jinja2    │  Auth Blueprint      │  6 tables, 3NF            │
-│  Bootstrap 5      │  Account Blueprint   │  8 indexes                │
-│  Chart.js         │  Complaints Blueprint│  4 views                  │
-│  Vanilla JS       │  Transaction Engine  │  4 triggers               │
-│                   │  Fraud Rules         │  Stored procedures        │
-│                   │  Analytics Queries   │  Optimistic row locking   │
-│                   │                      │                          │
-│                   │  Business logic:     │  SQLAlchemy ORM for       │
-│                   │  • ACID transfers    │  app tables, raw SQL      │
-│                   │  • Balance checks    │  for procs/triggers/views │
-│                   │  • Concurrency ctrl  │                           │
-└───────────────────┴──────────────────────┴──────────────────────────┘
-```
+```mermaid
+flowchart TD
+    subgraph Presentation["🖥️ Presentation Layer"]
+        A1[Login / Signup]
+        A2[Dashboard]
+        A3[Transactions]
+        A4[Complaints]
+    end
 
-### The transfer flow, step by step
+    subgraph Application["⚙️ Application Layer — Flask"]
+        B1[Auth Blueprint]
+        B2[Account Blueprint]
+        B3[Transaction Engine]
+        B4[Complaints Blueprint]
+        B5[Fraud Rule Engine]
+    end
 
-```
-1. Sender enters a receiver UPI ID + amount
-2. Flask checks: does the receiver's UPI ID exist?
-3. Flask checks: does the sender have sufficient balance?
-4. sp_transfer_money() runs as a single transaction:
+    subgraph DataAccess["🔌 Data Access — SQLAlchemy + raw SQL"]
+        D1[ORM models]
+        D2[Direct calls to stored procedures]
+    end
 
-   BEGIN;
-     UPDATE bank_accounts SET balance = balance - :amount
-       WHERE account_id = :sender_acc;
-     UPDATE bank_accounts SET balance = balance + :amount
-       WHERE account_id = :receiver_acc;
-     INSERT INTO transactions (sender_upi, receiver_upi, sender_acc,
-       receiver_acc, amount, txn_type, status, reference_id, remarks)
-       VALUES (...);
-   COMMIT;   -- any failure anywhere in here → ROLLBACK instead
+    subgraph Database["🗄️ Database Layer — MySQL"]
+        C1[(Tables + Indexes)]
+        C2[(Views)]
+        C3[(Triggers)]
+        C4[(Stored Procedures)]
+    end
 
-5. Fraud rules run against the completed transaction
-   (high value / rapid-fire / repeated failures → fraud_flags)
-6. Dashboard shows "Success" — or the exact failure reason
+    Presentation -->|HTTP requests| Application
+    Application --> DataAccess
+    DataAccess --> Database
 ```
 
-`bank_accounts` carries a `version` column, so concurrent transfers against the same account are protected by **optimistic locking** on top of MySQL InnoDB's own row-level locks — two simultaneous sends from the same account can't silently race each other into an inconsistent balance.
+Each layer only talks to the one directly below it — the dashboard never touches SQL directly, and the database layer never talks back up to the templates. That separation is also what let seven people build this in parallel without stepping on each other's files.
 
 ---
 
-## 🚀 DBMS Concepts, Mapped to Actual Code
+## 🔁 Transaction Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant U as Sender
+    participant F as Flask App
+    participant P as sp_transfer_money()
+    participant DB as MySQL
+
+    U->>F: Enter receiver UPI ID + amount
+    F->>DB: Validate receiver UPI ID exists
+    F->>DB: Check sender balance
+    F->>P: Call sp_transfer_money()
+    P->>DB: BEGIN TRANSACTION
+    P->>DB: Debit sender (bank_accounts, version+1)
+    P->>DB: Credit receiver (bank_accounts)
+    P->>DB: INSERT INTO transactions
+    P->>DB: COMMIT (or ROLLBACK on any failure)
+    DB-->>F: SUCCESS / ERROR
+    F->>F: Run fraud rules on the completed transaction
+    F-->>U: Show result
+```
+
+---
+
+## 🗄 Database Design
+
+```mermaid
+erDiagram
+    USERS ||--o{ BANK_ACCOUNTS : owns
+    USERS ||--o{ UPI_IDS : owns
+    USERS ||--o{ BENEFICIARIES : adds
+    USERS ||--o{ COMPLAINTS : raises
+    BANK_ACCOUNTS ||--o{ UPI_IDS : linked_to
+    UPI_IDS ||--o{ TRANSACTIONS : sends
+    UPI_IDS ||--o{ TRANSACTIONS : receives
+    TRANSACTIONS ||--o{ TRANSACTION_LOGS : logs
+    TRANSACTIONS ||--o{ FRAUD_FLAGS : flags
+    TRANSACTIONS ||--o{ COMPLAINTS : concerns
+```
+
+### DBMS Concepts, Mapped to Actual Code
 
 | Concept | Where it lives |
 |---|---|
@@ -113,13 +138,11 @@ Because a CRUD app proves you can call <code>INSERT</code> and <code>SELECT</cod
 | **Joins** | `vw_transaction_history` joins transactions → upi_ids → users, twice (sender + receiver) |
 | **Aggregation** | `vw_daily_summary`, `vw_bank_balance_report` — `SUM`, `COUNT`, `AVG`, `GROUP BY` |
 | **Concurrency Control** | `version` column on `bank_accounts` (optimistic locking) + InnoDB row-level locks |
-| **Fraud Detection** | Pluggable rule engine (`high_value`, `rapid_fire`, `repeated_failures`) writing to `fraud_flags` |
+| **Fraud Detection** | Rule engine (`high_value`, `rapid_fire`, `repeated_failures`) writing to `fraud_flags` |
 
 ---
 
 ## 🛠️ Technology Stack
-
-<div align="center">
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -133,9 +156,7 @@ Because a CRUD app proves you can call <code>INSERT</code> and <code>SELECT</cod
 | **Testing** | pytest + pytest-flask | Unit & integration tests |
 | **Deployment** | Gunicorn + python-dotenv | Production-style entrypoint |
 
-</div>
-
-> **Note:** the account/complaints routes call the MySQL stored procedures directly (raw SQL) rather than going through the ORM — a deliberate choice so the procedures stay visible as first-class DBMS objects rather than being reimplemented as ORM logic.
+> The account/complaints routes call the MySQL stored procedures directly (raw SQL via PyMySQL) rather than going through the ORM — a deliberate choice so the procedures stay visible as first-class DBMS objects rather than being reimplemented as ORM logic.
 
 ---
 
@@ -177,6 +198,12 @@ Because a CRUD app proves you can call <code>INSERT</code> and <code>SELECT</cod
 ┣ 📜 run.py
 ┗ 📜 README.md
 ```
+
+---
+
+## 📸 Screenshots / UI
+
+_Add dashboard, send-money, and history screenshots here before final submission — a quick visual anchor goes a long way in front of a mentor._
 
 ---
 
@@ -226,9 +253,9 @@ python run.py
 # Visit http://127.0.0.1:5000
 ```
 
-Demo login (from seed data): any of `rahul@gmail.com` / `priya@gmail.com` / `amit@gmail.com` — password `1234`.
+---
 
-### 5. Run Tests
+## 🧪 Testing
 ```bash
 pytest tests/ -v
 ```
@@ -236,6 +263,12 @@ pytest tests/ -v
 ---
 
 ## 👥 Team & Ownership
+
+<div align="center">
+
+`CDAC Kharghar` · `PGCP - BDA Minor Project` · `2026` · `Team of 7`
+
+</div>
 
 | Role | Member | Owns | Focus |
 |---|---|---|---|
@@ -251,14 +284,10 @@ pytest tests/ -v
 
 ## 🔭 Where This Could Go Next
 
-Realistic next steps if this moves beyond the weekend build:
-
 - [ ] Admin view over `fraud_flags` and `complaints` for triage
 - [ ] QR-code UPI address sharing (cosmetic — no real payment rail)
 - [ ] OTP-style second factor on login
 - [ ] Dockerized one-command local setup
-
-...and a couple of "why not" stretch ideas for later: a lightweight anomaly-scoring model instead of fixed fraud thresholds, and a read-only public dashboard of the aggregate (fully anonymized) daily-volume view.
 
 ---
 
@@ -279,9 +308,5 @@ Realistic next steps if this moves beyond the weekend build:
 <div align="center">
 
 **Keywords:** `UPI` · `Flask` · `MySQL` · `ACID Transactions` · `SQLAlchemy` · `Stored Procedures` · `Triggers` · `Views` · `Optimistic Concurrency Control` · `Fraud Detection` · `3NF`
-
-<br/>
-
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0ea5e9,50:1e3a8a,100:0f172a&height=120&section=footer"/>
 
 </div>
