@@ -1,45 +1,77 @@
--- ============================================================
--- Views for analytics and reporting
--- ============================================================
+-- ============================================
+-- VIEWS
+-- Run AFTER schema.sql
+-- ============================================
 
-USE payflow_upi;
+USE upi_db;
 
--- User-level transaction summary
-CREATE OR REPLACE VIEW v_user_transaction_summary AS
-SELECT 
-    u.id AS user_id,
-    u.username,
+-- ------------------------------------------
+-- VIEW 1: User Full Profile
+-- ------------------------------------------
+CREATE VIEW vw_user_profile AS
+SELECT
+    u.user_id,
     u.full_name,
-    COUNT(CASE WHEN t.sender_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id) THEN 1 END) AS total_sent_count,
-    COALESCE(SUM(CASE WHEN t.sender_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id) AND t.status = 'SUCCESS' THEN t.amount END), 0) AS total_sent_amount,
-    COUNT(CASE WHEN t.receiver_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id) THEN 1 END) AS total_received_count,
-    COALESCE(SUM(CASE WHEN t.receiver_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id) AND t.status = 'SUCCESS' THEN t.amount END), 0) AS total_received_amount
+    u.phone,
+    u.email,
+    up.upi_address,
+    b.bank_name,
+    b.account_no,
+    b.balance,
+    b.ifsc_code
 FROM users u
-LEFT JOIN transactions t ON t.sender_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id)
-                       OR t.receiver_upi IN (SELECT upi_id FROM upi_accounts WHERE user_id = u.id)
-GROUP BY u.id, u.username, u.full_name;
+JOIN upi_ids up ON u.user_id = up.user_id AND up.is_primary = TRUE
+JOIN bank_accounts b ON up.account_id = b.account_id;
 
--- Daily volume report
-CREATE OR REPLACE VIEW v_daily_report AS
-SELECT 
-    DATE(created_at) AS txn_date,
-    COUNT(*) AS total_txns,
-    SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS success_count,
-    SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count,
-    COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN amount ELSE 0 END), 0) AS total_volume,
-    ROUND(AVG(CASE WHEN status = 'SUCCESS' THEN amount END), 2) AS avg_txn_amount
-FROM transactions
-GROUP BY DATE(created_at)
-ORDER BY txn_date DESC;
 
--- Bank-wise volume
-CREATE OR REPLACE VIEW v_bank_wise_volume AS
-SELECT 
-    ba.bank_name,
-    COUNT(t.id) AS txn_count,
-    COALESCE(SUM(CASE WHEN t.status = 'SUCCESS' THEN t.amount END), 0) AS volume
-FROM bank_accounts ba
-JOIN upi_accounts ua ON ua.bank_account_id = ba.id
-LEFT JOIN transactions t ON t.sender_upi = ua.upi_id OR t.receiver_upi = ua.upi_id
-GROUP BY ba.bank_name
-ORDER BY volume DESC;
+-- ------------------------------------------
+-- VIEW 2: Transaction History (Readable)
+-- ------------------------------------------
+CREATE VIEW vw_transaction_history AS
+SELECT
+    t.txn_id,
+    t.reference_id,
+    s_upi.upi_address  AS sender_upi,
+    r_upi.upi_address  AS receiver_upi,
+    s_user.full_name   AS sender_name,
+    r_user.full_name   AS receiver_name,
+    t.amount,
+    t.txn_type,
+    t.status,
+    t.remarks,
+    t.timestamp
+FROM transactions t
+JOIN upi_ids s_upi  ON t.sender_upi   = s_upi.upi_id_pk
+JOIN upi_ids r_upi  ON t.receiver_upi = r_upi.upi_id_pk
+JOIN users s_user   ON s_upi.user_id  = s_user.user_id
+JOIN users r_user   ON r_upi.user_id  = r_user.user_id;
+
+
+-- ------------------------------------------
+-- VIEW 3: Daily Transaction Summary
+-- ------------------------------------------
+CREATE VIEW vw_daily_summary AS
+SELECT
+    DATE(t.timestamp) AS txn_date,
+    COUNT(*)          AS total_transactions,
+    SUM(CASE WHEN t.status = 'SUCCESS' THEN t.amount ELSE 0 END)
+                      AS total_amount,
+    SUM(CASE WHEN t.status = 'SUCCESS' THEN 1 ELSE 0 END)
+                      AS successful_count,
+    SUM(CASE WHEN t.status = 'FAILED' THEN 1 ELSE 0 END)
+                      AS failed_count
+FROM transactions t
+GROUP BY DATE(t.timestamp);
+
+
+-- ------------------------------------------
+-- VIEW 4: Bank-wise Balance Report
+-- ------------------------------------------
+CREATE VIEW vw_bank_balance_report AS
+SELECT
+    b.bank_name,
+    COUNT(b.account_id)  AS total_accounts,
+    SUM(b.balance)       AS total_deposits,
+    AVG(b.balance)       AS avg_balance
+FROM bank_accounts b
+GROUP BY b.bank_name;

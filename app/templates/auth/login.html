@@ -1,34 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Login · PayFlow{% endblock %}
+{% block title %}Sign in · PayFlow{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4">Login to PayFlow</h3>
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.login.label(class="form-label") }}
-                        {{ form.login(class="form-control", placeholder="Username or Email") }}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                    </div>
-                    <div class="mb-3 form-check">
-                        {{ form.remember(class="form-check-input") }}
-                        {{ form.remember.label(class="form-check-label") }}
-                    </div>
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
-                <p class="text-center mt-3 mb-0">
-                    New user? <a href="{{ url_for('auth.register') }}">Register here</a>
-                </p>
-            </div>
-        </div>
-    </div>
+<div class="card auth-card">
+  <h1>PayFlow</h1>
+  <p class="sub">Sign in to send and receive money.</p>
+  <form method="post">
+    {{ form.hidden_tag() }}
+    {{ form.login.label }}{{ form.login(placeholder="rahul@gmail.com") }}
+    {{ form.password.label }}{{ form.password() }}
+    <label class="check">{{ form.remember() }} Remember me</label>
+    {{ form.submit(class="btn full") }}
+  </form>
+  <p>New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+  <div class="demo">
+    Demo login — email <code>rahul@gmail.com</code> password <code>1234</code>.
+    UPI PIN is also <code>1234</code>. Try paying <code>priya@hdfc</code>.
+  </div>
 </div>
 {% endblock %}

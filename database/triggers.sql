@@ -1,45 +1,76 @@
--- ============================================================
--- Triggers
--- ============================================================
+-- ============================================
+-- TRIGGERS
+-- Run AFTER schema.sql
+-- ============================================
 
-USE payflow_upi;
+USE upi_db;
 
-DELIMITER $$
+-- ------------------------------------------
+-- TRIGGER 1: Auto-log every new transaction
+-- ------------------------------------------
+DELIMITER //
 
--- Auto-log successful / failed transactions into audit_log
-CREATE TRIGGER trg_transaction_after_insert
+CREATE TRIGGER trg_after_txn_insert
 AFTER INSERT ON transactions
 FOR EACH ROW
 BEGIN
-    INSERT INTO audit_log (table_name, action, record_id, new_values, changed_at)
-    VALUES (
-        'transactions',
-        'INSERT',
-        NEW.transaction_id,
-        JSON_OBJECT(
-            'sender_upi', NEW.sender_upi,
-            'receiver_upi', NEW.receiver_upi,
-            'amount', NEW.amount,
-            'status', NEW.status
-        ),
-        NOW()
-    );
-END$$
+    INSERT INTO transaction_logs (txn_id, action, old_status, new_status)
+    VALUES (NEW.txn_id, 'CREATED', NULL, NEW.status);
+END //
 
--- Simple high-value fraud flag example
-CREATE TRIGGER trg_high_value_fraud
-AFTER INSERT ON transactions
+DELIMITER ;
+
+
+-- ------------------------------------------
+-- TRIGGER 2: Log status changes
+-- ------------------------------------------
+DELIMITER //
+
+CREATE TRIGGER trg_after_txn_update
+AFTER UPDATE ON transactions
 FOR EACH ROW
 BEGIN
-    IF NEW.amount >= 50000 AND NEW.status = 'SUCCESS' THEN
-        INSERT INTO fraud_flags (transaction_id, rule_name, severity, details)
-        VALUES (
-            NEW.transaction_id,
-            'high_value',
-            'HIGH',
-            JSON_OBJECT('amount', NEW.amount, 'threshold', 50000)
-        );
+    IF OLD.status != NEW.status THEN
+        INSERT INTO transaction_logs
+            (txn_id, action, old_status, new_status)
+        VALUES
+            (NEW.txn_id, 'STATUS_CHANGE', OLD.status, NEW.status);
     END IF;
-END$$
+END //
+
+DELIMITER ;
+
+
+-- ------------------------------------------
+-- TRIGGER 3: Prevent negative balance
+-- ------------------------------------------
+DELIMITER //
+
+CREATE TRIGGER trg_before_balance_update
+BEFORE UPDATE ON bank_accounts
+FOR EACH ROW
+BEGIN
+    IF NEW.balance < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Balance cannot go below zero';
+    END IF;
+END //
+
+DELIMITER ;
+
+
+-- ------------------------------------------
+-- TRIGGER 4: Log when beneficiary is added
+-- ------------------------------------------
+DELIMITER //
+
+CREATE TRIGGER trg_after_beneficiary_add
+AFTER INSERT ON beneficiaries
+FOR EACH ROW
+BEGIN
+    INSERT INTO transaction_logs (txn_id, action, old_status, new_status)
+    VALUES (0, 'BENEFICIARY_ADDED', NULL, NEW.ben_upi);
+    -- txn_id = 0 is a placeholder for non-transaction logs
+END //
 
 DELIMITER ;

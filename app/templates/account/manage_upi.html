@@ -1,42 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Manage UPI · PayFlow{% endblock %}
+{% block title %}UPI IDs · PayFlow{% endblock %}
 {% block content %}
-<h2 class="mb-4">Your UPI IDs</h2>
-<div class="row">
-    <div class="col-md-5">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5>Create New UPI ID</h5>
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.upi_handle.label(class="form-label") }}
-                        <div class="input-group">
-                            {{ form.upi_handle(class="form-control") }}
-                            <span class="input-group-text">@payflow</span>
-                        </div>
-                    </div>
-                    <div class="mb-3">{{ form.bank_account_id.label(class="form-label") }}{{ form.bank_account_id(class="form-select") }}</div>
-                    <div class="mb-3 form-check">{{ form.is_primary(class="form-check-input") }}{{ form.is_primary.label(class="form-check-label") }}</div>
-                    <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
-                </form>
-            </div>
-        </div>
+<div class="page-head"><h1>UPI IDs</h1></div>
+<div class="grid grid-2">
+  <div class="list">
+    {% for u in upis %}
+    <div class="row-card">
+      <div>
+        <div class="mono">{{ u.upi_address }}</div>
+        <div class="muted">{{ u.bank_account.bank_name if u.bank_account else '' }}</div>
+      </div>
+      {% if u.is_primary %}
+        <span class="badge ok">Primary</span>
+      {% else %}
+        <form method="post" action="{{ url_for('account.set_primary', pk=u.upi_id_pk) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="btn ghost sm" type="submit">Make primary</button>
+        </form>
+      {% endif %}
     </div>
-    <div class="col-md-7">
-        <div class="list-group">
-            {% for upi in upi_accounts %}
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ upi.upi_id }}</strong>
-                    {% if upi.is_primary %}<span class="badge bg-success ms-2">Primary</span>{% endif %}
-                </div>
-                <small class="text-muted">{{ upi.created_at.strftime('%d %b %Y') }}</small>
-            </div>
-            {% else %}
-            <div class="alert alert-info">No UPI IDs yet.</div>
-            {% endfor %}
-        </div>
-    </div>
+    {% else %}
+    <div class="card"><p>No UPI IDs yet.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h3>Create UPI ID</h3>
+    {% if not accounts %}
+      <p>Link a bank account first.</p>
+      <a class="btn" href="{{ url_for('account.banks') }}">Link bank</a>
+    {% else %}
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ form.handle.label }}{{ form.handle(placeholder="yourname") }}
+      {{ form.provider.label }}{{ form.provider() }}
+      {{ form.account_id.label }}{{ form.account_id() }}
+      {{ form.pin.label }}{{ form.pin() }}
+      <label>{{ form.is_primary() }} Set as primary</label>
+      {{ form.submit(class="btn full") }}
+    </form>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

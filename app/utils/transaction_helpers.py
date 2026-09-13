@@ -1,129 +1,132 @@
-"""
-Core ACID transfer logic.
-This is the heart of the project — every evaluator will look here.
-"""
-from app import db
-from app.models.user import User
-from app.models.bank_account import BankAccount
-from app.models.upi import UPIAccount
-from app.models.transaction import Transaction, TransactionStatus
-from decimal import Decimal
-import uuid
+"""ACID fund transfer — mirrors sp_transfer_money."""
 from datetime import datetime
-from sqlalchemy import select, update
-from sqlalchemy.orm import with_for_update
+from decimal import Decimal
+from sqlalchemy import select, func
+from app import db
+from app.models.bank_account import BankAccount
+from app.models.upi import UPIId
+from app.models.transaction import Transaction
+from app.models.transaction_log import TransactionLog
+from app.utils.fraud import evaluate_transfer
 
-def perform_transfer(sender_user: User, receiver_upi: str, amount: Decimal, remarks: str = None) -> dict:
-    """
-    Execute a money transfer with full ACID guarantees + optimistic locking.
-    
-    Steps:
-    1. Resolve sender's primary UPI + bank account
-    2. Resolve receiver UPI + bank account
-    3. Check sufficient balance
-    4. BEGIN transaction
-    5. Debit sender (with version check)
-    6. Credit receiver
-    7. Insert transaction record
-    8. COMMIT (or ROLLBACK on any error)
-    """
-    amount = Decimal(str(amount))
+
+def _ref_id() -> str:
+    stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    n = db.session.query(func.count(Transaction.txn_id)).scalar() or 0
+    return f"TXN{stamp}{n % 10000:04d}"[:20]
+
+
+def log_action(txn_id, action, old_status=None, new_status=None):
+    db.session.add(
+        TransactionLog(
+            txn_id=txn_id,
+            action=action,
+            old_status=old_status,
+            new_status=new_status,
+        )
+    )
+
+
+def perform_transfer(sender_user, receiver_upi_addr, amount, remarks, pin) -> dict:
+    amount = Decimal(str(amount)).quantize(Decimal("0.01"))
     if amount <= 0:
-        return {'success': False, 'message': 'Amount must be positive'}
+        return {"success": False, "message": "Amount must be greater than zero."}
 
-    # --- Resolve sender ---
-    sender_upi_obj = sender_user.upi_accounts.filter_by(is_primary=True, is_active=True).first()
-    if not sender_upi_obj:
-        return {'success': False, 'message': 'No primary UPI ID found. Please create one first.'}
-    
-    sender_account = sender_upi_obj.bank_account
-    if not sender_account or not sender_account.is_active:
-        return {'success': False, 'message': 'Linked bank account is inactive'}
+    sender_upi = sender_user.primary_upi
+    if not sender_upi:
+        return {"success": False, "message": "Create a primary UPI ID before sending money."}
 
-    # --- Resolve receiver ---
-    receiver_upi_obj = UPIAccount.query.filter_by(upi_id=receiver_upi, is_active=True).first()
-    if not receiver_upi_obj:
-        return {'success': False, 'message': f'Receiver UPI "{receiver_upi}" does not exist'}
-    
-    if receiver_upi_obj.user_id == sender_user.id:
-        return {'success': False, 'message': 'Cannot send money to yourself'}
+    if not sender_upi.check_pin(pin):
+        return {"success": False, "message": "Incorrect UPI PIN."}
 
-    receiver_account = receiver_upi_obj.bank_account
-    if not receiver_account or not receiver_account.is_active:
-        return {'success': False, 'message': 'Receiver bank account is inactive'}
+    receiver_upi = UPIId.query.filter_by(upi_address=receiver_upi_addr.strip().lower()).first()
+    if not receiver_upi:
+        return {"success": False, "message": "Receiver UPI ID does not exist."}
 
-    # --- Pre-check balance ---
-    if sender_account.balance < amount:
-        return {'success': False, 'message': 'Insufficient balance'}
+    if receiver_upi.user_id == sender_user.user_id:
+        return {"success": False, "message": "You cannot pay yourself."}
 
-    txn_id = str(uuid.uuid4())
+    fraud = evaluate_transfer(sender_user, amount)
+    if fraud.get("block"):
+        return {"success": False, "message": fraud["message"]}
+
+    ref = _ref_id()
 
     try:
-        # ========== BEGIN TRANSACTION ==========
-        # Use SELECT ... FOR UPDATE for row-level locking
         sender_acc = db.session.execute(
             select(BankAccount)
-            .where(BankAccount.id == sender_account.id)
+            .where(BankAccount.account_id == sender_upi.account_id)
             .with_for_update()
         ).scalar_one()
-
-        # Re-check balance under lock
-        if sender_acc.balance < amount:
-            db.session.rollback()
-            return {'success': False, 'message': 'Insufficient balance (concurrent transfer)'}
-
-        # Optimistic version check (extra safety)
-        expected_version = sender_acc.version
-
-        # Debit sender
-        sender_acc.balance -= amount
-        sender_acc.version += 1
-
-        # Credit receiver
         receiver_acc = db.session.execute(
             select(BankAccount)
-            .where(BankAccount.id == receiver_account.id)
+            .where(BankAccount.account_id == receiver_upi.account_id)
             .with_for_update()
         ).scalar_one()
-        receiver_acc.balance += amount
 
-        # Create transaction record
+        if sender_acc.balance < amount:
+            txn = Transaction(
+                sender_upi=sender_upi.upi_id_pk,
+                receiver_upi=receiver_upi.upi_id_pk,
+                sender_acc=sender_acc.account_id,
+                receiver_acc=receiver_acc.account_id,
+                amount=amount,
+                txn_type="PAY",
+                status="FAILED",
+                reference_id=ref,
+                remarks=remarks,
+            )
+            db.session.add(txn)
+            db.session.flush()
+            log_action(txn.txn_id, "CREATED", None, "FAILED")
+            db.session.commit()
+            return {"success": False, "message": "Insufficient balance.", "txn_id": ref}
+
+        sender_acc.balance = Decimal(sender_acc.balance) - amount
+        receiver_acc.balance = Decimal(receiver_acc.balance) + amount
+
         txn = Transaction(
-            transaction_id=txn_id,
-            sender_upi=sender_upi_obj.upi_id,
-            receiver_upi=receiver_upi,
+            sender_upi=sender_upi.upi_id_pk,
+            receiver_upi=receiver_upi.upi_id_pk,
+            sender_acc=sender_acc.account_id,
+            receiver_acc=receiver_acc.account_id,
             amount=amount,
-            status=TransactionStatus.SUCCESS,
+            txn_type="PAY",
+            status="SUCCESS",
+            reference_id=ref,
             remarks=remarks,
-            completed_at=datetime.utcnow()
         )
         db.session.add(txn)
-
-        # ========== COMMIT ==========
+        db.session.flush()
+        log_action(txn.txn_id, "CREATED", None, "SUCCESS")
+        if fraud.get("flag"):
+            log_action(txn.txn_id, "FRAUD_FLAG", None, fraud.get("rule"))
         db.session.commit()
-
         return {
-            'success': True,
-            'txn_id': txn_id,
-            'message': 'Transfer successful',
-            'new_balance': float(sender_acc.balance)
+            "success": True,
+            "message": "Payment successful.",
+            "txn_id": ref,
+            "new_balance": sender_acc.balance,
         }
-
-    except Exception as e:
+    except Exception as exc:
         db.session.rollback()
-        # Log failed transaction
         try:
-            failed_txn = Transaction(
-                transaction_id=txn_id,
-                sender_upi=sender_upi_obj.upi_id if sender_upi_obj else 'unknown',
-                receiver_upi=receiver_upi,
+            txn = Transaction(
+                sender_upi=sender_upi.upi_id_pk,
+                receiver_upi=receiver_upi.upi_id_pk,
+                sender_acc=sender_upi.account_id,
+                receiver_acc=receiver_upi.account_id,
                 amount=amount,
-                status=TransactionStatus.FAILED,
-                failure_reason=str(e)[:255],
-                remarks=remarks
+                txn_type="PAY",
+                status="FAILED",
+                reference_id=ref,
+                remarks=(remarks or "")[:80],
             )
-            db.session.add(failed_txn)
+            db.session.add(txn)
+            db.session.flush()
+            log_action(txn.txn_id, "CREATED", None, "FAILED")
+            log_action(txn.txn_id, "ERROR", None, str(exc)[:20])
             db.session.commit()
-        except:
+        except Exception:
             db.session.rollback()
-        return {'success': False, 'message': f'Transfer failed: {str(e)}'}
+        return {"success": False, "message": "Transfer failed. The transaction was rolled back."}

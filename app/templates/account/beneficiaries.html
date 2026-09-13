@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}People · PayFlow{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Saved people</h1></div>
+<div class="grid grid-2">
+  <div class="list">
+    {% for b in items %}
+    <div class="row-card">
+      <div>
+        <div>{{ b.ben_name }}</div>
+        <div class="mono muted">{{ b.ben_upi }}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a class="btn sm" href="{{ url_for('transaction.send', to=b.ben_upi) }}">Pay</a>
+        <form method="post" action="{{ url_for('beneficiary.delete', ben_id=b.ben_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="btn ghost sm" type="submit">Remove</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card"><p>No beneficiaries yet.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h3>Add beneficiary</h3>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ form.ben_name.label }}{{ form.ben_name() }}
+      {{ form.ben_upi.label }}{{ form.ben_upi(placeholder="amit@icici") }}
+      {{ form.submit(class="btn full") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

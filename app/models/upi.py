@@ -1,18 +1,26 @@
-from app import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from app import db
 
-class UPIAccount(db.Model):
-    __tablename__ = 'upi_accounts'
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    bank_account_id = db.Column(db.Integer, db.ForeignKey('bank_accounts.id'), nullable=False)
-    upi_id = db.Column(db.String(100), unique=True, nullable=False, index=True)  # e.g. name@payflow
+class UPIId(db.Model):
+    __tablename__ = "upi_ids"
+
+    upi_id_pk = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False, index=True)
+    account_id = db.Column(
+        db.Integer, db.ForeignKey("bank_accounts.account_id"), nullable=False
+    )
+    upi_address = db.Column(db.String(50), nullable=False, unique=True, index=True)
+    upi_pin_hash = db.Column(db.String(255), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
-    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    bank_account = db.relationship('BankAccount', backref='upi_ids')
+    def set_pin(self, pin):
+        self.upi_pin_hash = generate_password_hash(pin)
+
+    def check_pin(self, pin):
+        return check_password_hash(self.upi_pin_hash, pin)
 
     def __repr__(self):
-        return f'<UPIAccount {self.upi_id}>'
+        return f"<UPIId {self.upi_address}>"

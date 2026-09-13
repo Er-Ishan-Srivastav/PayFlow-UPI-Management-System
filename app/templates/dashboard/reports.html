@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Reports · PayFlow{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reports</h1>
+    <p>Aggregations over your ledger — the same ideas as the SQL views.</p>
+  </div>
+</div>
+<div class="grid grid-3">
+  <div class="card stat">
+    <div class="label">Balance</div>
+    <div class="value">{{ summary.total_balance | inr }}</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Successful out</div>
+    <div class="value">{{ summary.sent_count }}</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Failed</div>
+    <div class="value">{{ summary.failed_count }}</div>
+  </div>
+</div>
+<div class="card" style="margin-top:24px">
+  <h3>Daily volume</h3>
+  <canvas id="repChart" height="120"></canvas>
+</div>
+<div class="grid grid-2" style="margin-top:24px">
+  <div class="card">
+    <h3>Your banks</h3>
+    <table class="table">
+      <thead><tr><th>Bank</th><th>Accounts</th><th>Deposits</th></tr></thead>
+      <tbody>
+      {% for b in banks %}
+        <tr><td>{{ b.bank }}</td><td>{{ b.accounts }}</td><td class="mono">{{ b.balance | inr }}</td></tr>
+      {% else %}
+        <tr><td colspan="3">None</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Monthly</h3>
+    <table class="table">
+      <thead><tr><th>Month</th><th>Volume</th><th>Count</th></tr></thead>
+      <tbody>
+      {% for m, vol, c in monthly %}
+        <tr><td class="mono">{{ m }}</td><td class="mono">{{ vol | inr }}</td><td>{{ c }}</td></tr>
+      {% else %}
+        <tr><td colspan="3">No rows</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const series = {{ series | tojson }};
+const ctx = document.getElementById('repChart');
+if (ctx && series.length) {
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: series.map(s => s.date),
+      datasets: [
+        { label: 'Success', data: series.map(s => s.success), borderColor: '#7d9a7e', tension: 0.3 },
+        { label: 'Failed', data: series.map(s => s.failed), borderColor: '#c47a72', tension: 0.3 }
+      ]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#9a9a93' } } },
+      scales: {
+        x: { ticks: { color: '#9a9a93' }, grid: { display: false } },
+        y: { ticks: { color: '#9a9a93' }, grid: { color: 'rgba(255,255,255,.06)' } }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

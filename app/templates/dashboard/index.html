@@ -1,42 +1,84 @@
 {% extends "base.html" %}
-{% block title %}Dashboard · PayFlow{% endblock %}
+{% block title %}Overview · PayFlow{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Welcome, {{ user.full_name }} 👋</h2>
+<div class="page-head">
+  <div>
+    <h1>{{ current_user.full_name.split()[0] }}</h1>
+    <p>{{ summary.primary_upi or "No primary UPI yet" }}</p>
+  </div>
+  <a class="btn" href="{{ url_for('transaction.send') }}">Send money</a>
 </div>
 
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="card text-bg-primary h-100">
-            <div class="card-body">
-                <h5 class="card-title">Quick Send</h5>
-                <p class="card-text">Transfer money instantly using UPI ID.</p>
-                <a href="{{ url_for('transaction.send') }}" class="btn btn-light">Send Money</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-bg-success h-100">
-            <div class="card-body">
-                <h5 class="card-title">Balance & Accounts</h5>
-                <p class="card-text">View linked banks and available balance.</p>
-                <a href="{{ url_for('account.balance') }}" class="btn btn-light">View Balance</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-bg-info h-100">
-            <div class="card-body">
-                <h5 class="card-title">Transaction History</h5>
-                <p class="card-text">See all past transfers with filters.</p>
-                <a href="{{ url_for('transaction.history') }}" class="btn btn-light">View History</a>
-            </div>
-        </div>
-    </div>
+<div class="grid grid-3">
+  <div class="card stat">
+    <div class="label">Total balance</div>
+    <div class="value">{{ summary.total_balance | inr }}</div>
+    <div class="hint">Across linked accounts</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Sent</div>
+    <div class="value">{{ summary.sent_amount | inr }}</div>
+    <div class="hint">{{ summary.sent_count }} payments</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Received</div>
+    <div class="value">{{ summary.received_amount | inr }}</div>
+    <div class="hint">{{ summary.received_count }} credits</div>
+  </div>
 </div>
 
-<div class="mt-5">
-    <h4>Analytics (coming from #5)</h4>
-    <p class="text-muted">Daily volume, success rate and bank-wise charts will appear here once Chart.js is wired.</p>
+<div class="grid grid-2" style="margin-top:24px">
+  <div class="card">
+    <h3>Volume</h3>
+    <canvas id="volChart" height="140"></canvas>
+  </div>
+  <div class="card">
+    <h3>Recent activity</h3>
+    {% if recent %}
+    <table class="table">
+      <tbody>
+      {% for t in recent %}
+        {% set mine = t.sender_upi_rel.user_id == current_user.user_id if t.sender_upi_rel else false %}
+        <tr>
+          <td>
+            <div class="mono">{{ t.amount | inr }}</div>
+            <div class="muted">{{ t.remarks or t.reference_id }}</div>
+          </td>
+          <td class="mono">{{ t.timestamp.strftime('%d %b') }}</td>
+          <td><span class="badge {% if t.status == 'SUCCESS' %}ok{% else %}bad{% endif %}">{{ t.status }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No transactions yet.</p>
+    {% endif %}
+  </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const series = {{ series | tojson }};
+const ctx = document.getElementById('volChart');
+if (ctx && series.length) {
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: series.map(s => s.date.slice(5)),
+      datasets: [{
+        label: 'Volume',
+        data: series.map(s => s.volume),
+        backgroundColor: '#c5cdd8'
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#9a9a93' }, grid: { display: false } },
+        y: { ticks: { color: '#9a9a93' }, grid: { color: 'rgba(255,255,255,.06)' } }
+      }
+    }
+  });
+}
+</script>
 {% endblock %}

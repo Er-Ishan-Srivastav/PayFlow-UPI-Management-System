@@ -1,48 +1,83 @@
--- ============================================================
--- Seed Data (realistic sample for testing)
--- Password for all users: Password@123
--- ============================================================
+-- ============================================
+-- SEED DATA (Demo Users for Testing)
+-- Run AFTER schema.sql
+-- ============================================
 
-USE payflow_upi;
+USE upi_db;
 
--- Users (password_hash is werkzeug hash of 'Password@123')
-INSERT INTO users (username, email, phone, password_hash, full_name, is_admin) VALUES
-('harsh_j', 'harsh@example.com', '9876543210', 'pbkdf2:sha256:600000$dummy$hash', 'Harsh Jadhav', TRUE),
-('komal_l', 'komal@example.com', '9876543211', 'pbkdf2:sha256:600000$dummy$hash', 'Komal Londhe', FALSE),
-('hansal', 'hansal@example.com', '9876543212', 'pbkdf2:sha256:600000$dummy$hash', 'Hansal', FALSE),
-('krunal', 'krunal@example.com', '9876543213', 'pbkdf2:sha256:600000$dummy$hash', 'Krunal', FALSE),
-('khushi', 'khushi@example.com', '9876543214', 'pbkdf2:sha256:600000$dummy$hash', 'Khushi Joshi', FALSE),
-('harshav', 'harshav@example.com', '9876543215', 'pbkdf2:sha256:600000$dummy$hash', 'Harshavardhan', FALSE),
-('ishan', 'ishan@example.com', '9876543216', 'pbkdf2:sha256:600000$dummy$hash', 'Ishan Srivastav', FALSE);
+-- ------------------------------------------
+-- 5 Demo Users
+-- (password_hash = hashed version of "1234")
+-- ------------------------------------------
+INSERT INTO users (full_name, email, phone, password_hash) VALUES
+('Rahul Sharma',   'rahul@gmail.com',   '9876543210', 'pbkdf2:sha256:600000$xyz$hash1'),
+('Priya Patel',    'priya@gmail.com',   '9876543211', 'pbkdf2:sha256:600000$xyz$hash2'),
+('Amit Kumar',     'amit@gmail.com',    '9876543212', 'pbkdf2:sha256:600000$xyz$hash3'),
+('Sneha Reddy',    'sneha@gmail.com',   '9876543213', 'pbkdf2:sha256:600000$xyz$hash4'),
+('Vikram Singh',   'vikram@gmail.com',  '9876543214', 'pbkdf2:sha256:600000$xyz$hash5');
 
--- Bank Accounts
-INSERT INTO bank_accounts (user_id, bank_name, account_number, ifsc_code, balance, is_primary) VALUES
-(1, 'HDFC Bank', '50100123456789', 'HDFC0001234', 150000.00, TRUE),
-(2, 'ICICI Bank', '60100123456780', 'ICIC0001234', 85000.00, TRUE),
-(3, 'SBI', '30100123456781', 'SBIN0001234', 42000.50, TRUE),
-(4, 'Axis Bank', '40100123456782', 'UTIB0001234', 210000.00, TRUE),
-(5, 'Kotak', '70100123456783', 'KKBK0001234', 67000.00, TRUE),
-(6, 'Yes Bank', '80100123456784', 'YESB0001234', 33000.00, TRUE),
-(7, 'PNB', '90100123456785', 'PUNB0001234', 95000.00, TRUE);
+-- ------------------------------------------
+-- Bank Accounts (1 per user, ₹10,000 each)
+-- ------------------------------------------
+INSERT INTO bank_accounts (user_id, bank_name, account_no, ifsc_code, balance, account_type) VALUES
+(1, 'State Bank of India',  '123456789012', 'SBIN0001234', 10000.00, 'Savings'),
+(2, 'HDFC Bank',            '234567890123', 'HDFC0001234', 15000.00, 'Savings'),
+(3, 'ICICI Bank',           '345678901234', 'ICIC0001234',  8000.00, 'Current'),
+(4, 'Axis Bank',            '456789012345', 'UTIB0001234', 20000.00, 'Savings'),
+(5, 'Kotak Mahindra Bank',  '567890123456', 'KKBK0001234',  5000.00, 'Savings');
 
--- UPI Accounts
-INSERT INTO upi_accounts (user_id, bank_account_id, upi_id, is_primary) VALUES
-(1, 1, 'harsh@payflow', TRUE),
-(2, 2, 'komal@payflow', TRUE),
-(3, 3, 'hansal@payflow', TRUE),
-(4, 4, 'krunal@payflow', TRUE),
-(5, 5, 'khushi@payflow', TRUE),
-(6, 6, 'harshav@payflow', TRUE),
-(7, 7, 'ishan@payflow', TRUE);
+-- ------------------------------------------
+-- UPI IDs (1 per user, PIN hash = hashed "1234")
+-- ------------------------------------------
+INSERT INTO upi_ids (user_id, account_id, upi_address, upi_pin_hash, is_primary) VALUES
+(1, 1, 'rahul@sbi',    'pbkdf2:sha256:600000$xyz$pin1', TRUE),
+(2, 2, 'priya@hdfc',   'pbkdf2:sha256:600000$xyz$pin2', TRUE),
+(3, 3, 'amit@icici',   'pbkdf2:sha256:600000$xyz$pin3', TRUE),
+(4, 4, 'sneha@axis',   'pbkdf2:sha256:600000$xyz$pin4', TRUE),
+(5, 5, 'vikram@kotak', 'pbkdf2:sha256:600000$xyz$pin5', TRUE);
 
--- Sample successful transactions
-INSERT INTO transactions (transaction_id, sender_upi, receiver_upi, amount, status, remarks, completed_at) VALUES
-(UUID(), 'harsh@payflow', 'komal@payflow', 2500.00, 'SUCCESS', 'Lunch money', NOW() - INTERVAL 2 DAY),
-(UUID(), 'komal@payflow', 'hansal@payflow', 1200.00, 'SUCCESS', 'Movie tickets', NOW() - INTERVAL 1 DAY),
-(UUID(), 'hansal@payflow', 'krunal@payflow', 5000.00, 'SUCCESS', 'Project contribution', NOW() - INTERVAL 12 HOUR),
-(UUID(), 'krunal@payflow', 'khushi@payflow', 750.50, 'SUCCESS', 'Coffee', NOW() - INTERVAL 6 HOUR),
-(UUID(), 'khushi@payflow', 'ishan@payflow', 3000.00, 'SUCCESS', 'Birthday gift', NOW() - INTERVAL 3 HOUR);
+-- ------------------------------------------
+-- Beneficiaries
+-- ------------------------------------------
+INSERT INTO beneficiaries (user_id, ben_name, ben_upi) VALUES
+(1, 'Priya',  'priya@hdfc'),
+(1, 'Amit',   'amit@icici'),
+(2, 'Rahul',  'rahul@sbi'),
+(3, 'Sneha',  'sneha@axis'),
+(4, 'Vikram', 'vikram@kotak');
 
--- One failed transaction
-INSERT INTO transactions (transaction_id, sender_upi, receiver_upi, amount, status, failure_reason, created_at) VALUES
-(UUID(), 'harshav@payflow', 'unknown@payflow', 1000.00, 'FAILED', 'Receiver UPI does not exist', NOW() - INTERVAL 1 HOUR);
+-- ------------------------------------------
+-- Sample Transactions
+-- ------------------------------------------
+INSERT INTO transactions
+    (sender_upi, receiver_upi, sender_acc, receiver_acc,
+     amount, txn_type, status, reference_id, remarks)
+VALUES
+(1, 2, 1, 2, 500.00,  'PAY', 'SUCCESS', 'TXN20250101001', 'Lunch money'),
+(2, 3, 2, 3, 1200.00, 'PAY', 'SUCCESS', 'TXN20250101002', 'Rent share'),
+(1, 4, 1, 4, 300.00,  'PAY', 'SUCCESS', 'TXN20250102001', 'Movie ticket'),
+(3, 1, 3, 1, 750.00,  'PAY', 'SUCCESS', 'TXN20250102002', 'Groceries'),
+(5, 2, 5, 2, 200.00,  'PAY', 'FAILED',  'TXN20250103001', 'Insufficient funds'),
+(4, 1, 4, 1, 1500.00, 'PAY', 'SUCCESS', 'TXN20250103002', 'Freelance payment');
+
+
+USE upi_db;
+
+-- 1. Allow txn_id to be NULL in transaction_logs
+ALTER TABLE transaction_logs MODIFY txn_id INT NULL;
+
+-- 2. Drop the faulty trigger
+DROP TRIGGER IF EXISTS trg_after_beneficiary_add;
+
+-- 3. Recreate the trigger using NULL instead of 0
+DELIMITER //
+
+CREATE TRIGGER trg_after_beneficiary_add
+AFTER INSERT ON beneficiaries
+FOR EACH ROW
+BEGIN
+    INSERT INTO transaction_logs (txn_id, action, old_status, new_status)
+    VALUES (NULL, 'BENEFICIARY_ADDED', NULL, NEW.ben_upi);
+END //
+
+DELIMITER ;

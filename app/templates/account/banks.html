@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Banks · PayFlow{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Bank accounts</h1>
+</div>
+<div class="grid grid-2">
+  <div>
+    {% for acc in accounts %}
+    <div class="card">
+      <div class="label">{{ acc.bank_name }}</div>
+      <div class="value mono" style="font-size:1.4rem">{{ acc.balance | inr }}</div>
+      <p>{{ acc.masked_account() }} · {{ acc.ifsc_code }} · {{ acc.account_type }}</p>
+    </div>
+    {% else %}
+    <div class="card"><p>No banks linked yet.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h3>Link a bank</h3>
+    <p>Maximum three accounts per user (stored procedure rule).</p>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ form.bank_name.label }}{{ form.bank_name() }}
+      {{ form.account_no.label }}{{ form.account_no() }}
+      {{ form.ifsc_code.label }}{{ form.ifsc_code(placeholder="HDFC0001234") }}
+      {{ form.account_type.label }}{{ form.account_type() }}
+      {{ form.opening_balance.label }}{{ form.opening_balance() }}
+      {{ form.submit(class="btn full") }}
+    </form>
+  </div>
+</div>
+{% endblock %}

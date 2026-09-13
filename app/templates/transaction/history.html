@@ -1,24 +1,48 @@
 {% extends "base.html" %}
 {% block title %}History · PayFlow{% endblock %}
 {% block content %}
-<h2 class="mb-4">Transaction History</h2>
+<div class="page-head">
+  <h1>History</h1>
+  <form class="filters" method="get">
+    {{ form.q(placeholder="Search remarks / ref") }}
+    {{ form.status() }}
+    {{ form.direction() }}
+    <button class="btn sm" type="submit">Filter</button>
+  </form>
+</div>
 <div class="card">
-    <div class="card-body">
-        <p class="text-muted">Transaction list with search/filter will be implemented by #3 & #6.</p>
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Txn ID</th>
-                    <th>From / To</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Placeholder rows -->
-            </tbody>
-        </table>
-    </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Ref</th>
+        <th>Counterparty</th>
+        <th>Amount</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in txns %}
+      {% set sent = t.sender_upi in my_pks %}
+      <tr>
+        <td>{{ t.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+        <td class="mono">{{ t.reference_id }}</td>
+        <td class="mono">{{ upi_map.get(t.receiver_upi if sent else t.sender_upi, '—') }}</td>
+        <td class="mono">{{ '−' if sent else '+' }}{{ t.amount | inr }}</td>
+        <td><span class="badge {% if t.status == 'SUCCESS' %}ok{% else %}bad{% endif %}">{{ t.status }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">No payments match.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="pager">
+    {% if pagination.has_prev %}
+      <a class="btn ghost sm" href="{{ url_for('transaction.history', page=pagination.prev_num, **request.args) }}">Previous</a>
+    {% endif %}
+    {% if pagination.has_next %}
+      <a class="btn ghost sm" href="{{ url_for('transaction.history', page=pagination.next_num, **request.args) }}">Next</a>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

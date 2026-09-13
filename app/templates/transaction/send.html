@@ -1,34 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Send Money · PayFlow{% endblock %}
+{% block title %}Send · PayFlow{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <h3 class="card-title mb-4">Send Money</h3>
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.receiver_upi.label(class="form-label") }}
-                        {{ form.receiver_upi(class="form-control", placeholder="receiver@payflow") }}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.amount.label(class="form-label") }}
-                        <div class="input-group">
-                            <span class="input-group-text">₹</span>
-                            {{ form.amount(class="form-control") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.remarks.label(class="form-label") }}
-                        {{ form.remarks(class="form-control", rows=2) }}
-                    </div>
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+<div class="page-head">
+  <div>
+    <h1>Send money</h1>
+    <p>From {{ primary.upi_address if primary else "no primary UPI" }}</p>
+  </div>
+</div>
+<div class="grid grid-2">
+  <div class="card">
+    {% if not primary %}
+      <p>Create a primary UPI ID before paying.</p>
+      <a class="btn" href="{{ url_for('account.manage_upi') }}">Create UPI ID</a>
+    {% else %}
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ form.receiver_upi.label }}{{ form.receiver_upi(placeholder="priya@hdfc") }}
+      {{ form.amount.label }}{{ form.amount(placeholder="500.00") }}
+      {{ form.remarks.label }}{{ form.remarks() }}
+      {{ form.pin.label }}{{ form.pin(placeholder="1234") }}
+      {{ form.submit(class="btn full") }}
+    </form>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h3>How it settles</h3>
+    <p>The transfer runs in a single database transaction: lock both accounts, debit, credit, write the ledger row, then commit. Any failure rolls the whole unit back.</p>
+    <p>Demo PIN is <span class="mono">1234</span>.</p>
+  </div>
 </div>
 {% endblock %}

@@ -1,55 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}PayFlow UPI{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% block extra_css %}{% endblock %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}PayFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">PayFlow UPI</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="nav">
-                {% if current_user.is_authenticated %}
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('transaction.send') }}">Send Money</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('transaction.history') }}">History</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('account.balance') }}">Balance</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('account.manage_upi') }}">UPI IDs</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item"><span class="nav-link">Hi, {{ current_user.full_name.split()[0] }}</span></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>
-                </ul>
-                {% endif %}
-            </div>
-        </div>
+  {% if current_user.is_authenticated %}
+  <aside class="rail">
+    <a class="brand" href="{{ url_for('dashboard.index') }}">PayFlow</a>
+    <nav>
+      <a href="{{ url_for('dashboard.index') }}" class="{% if request.endpoint == 'dashboard.index' %}on{% endif %}">Overview</a>
+      <a href="{{ url_for('transaction.send') }}" class="{% if request.endpoint == 'transaction.send' %}on{% endif %}">Send</a>
+      <a href="{{ url_for('transaction.history') }}" class="{% if request.endpoint == 'transaction.history' %}on{% endif %}">History</a>
+      <a href="{{ url_for('account.banks') }}" class="{% if request.endpoint == 'account.banks' %}on{% endif %}">Banks</a>
+      <a href="{{ url_for('account.manage_upi') }}" class="{% if request.endpoint == 'account.manage_upi' %}on{% endif %}">UPI IDs</a>
+      <a href="{{ url_for('beneficiary.index') }}" class="{% if request.endpoint == 'beneficiary.index' %}on{% endif %}">People</a>
+      <a href="{{ url_for('reports.index') }}" class="{% if request.endpoint == 'reports.index' %}on{% endif %}">Reports</a>
     </nav>
+    <div class="rail-foot">
+      <div class="who">{{ current_user.full_name }}</div>
+      <a class="muted" href="{{ url_for('auth.logout') }}">Sign out</a>
+    </div>
+  </aside>
+  {% endif %}
 
-    <main class="container my-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block extra_js %}{% endblock %}
+  <main class="shell {% if not current_user.is_authenticated %}auth{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for cat, msg in messages %}
+            <div class="flash {{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
