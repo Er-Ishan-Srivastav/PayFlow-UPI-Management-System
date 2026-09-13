@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Balance · PayFlow{% endblock %}
+{% block content %}
+<h2 class="mb-4">Your Bank Accounts</h2>
+<div class="row g-3">
+    {% for acc in accounts %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ acc.bank_name }}</h5>
+                <p class="mb-1"><strong>A/C:</strong> ****{{ acc.account_number[-4:] }}</p>
+                <p class="mb-1"><strong>IFSC:</strong> {{ acc.ifsc_code }}</p>
+                <h3 class="text-success">₹{{ "%.2f"|format(acc.balance) }}</h3>
+                {% if acc.is_primary %}<span class="badge bg-primary">Primary</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">No bank accounts linked yet. <a href="{{ url_for('account.link_bank') }}">Link one now</a>.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Manage UPI · PayFlow{% endblock %}
+{% block content %}
+<h2 class="mb-4">Your UPI IDs</h2>
+<div class="row">
+    <div class="col-md-5">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Create New UPI ID</h5>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.upi_handle.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.upi_handle(class="form-control") }}
+                            <span class="input-group-text">@payflow</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">{{ form.bank_account_id.label(class="form-label") }}{{ form.bank_account_id(class="form-select") }}</div>
+                    <div class="mb-3 form-check">{{ form.is_primary(class="form-check-input") }}{{ form.is_primary.label(class="form-check-label") }}</div>
+                    <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="list-group">
+            {% for upi in upi_accounts %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ upi.upi_id }}</strong>
+                    {% if upi.is_primary %}<span class="badge bg-success ms-2">Primary</span>{% endif %}
+                </div>
+                <small class="text-muted">{{ upi.created_at.strftime('%d %b %Y') }}</small>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No UPI IDs yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

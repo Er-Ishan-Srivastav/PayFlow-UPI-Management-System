@@ -1,0 +1,22 @@
+body {
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.navbar-brand {
+    letter-spacing: -0.5px;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1e3a8a, #0ea5e9);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1e40af, #0284c7);
+}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · PayFlow{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Welcome, {{ user.full_name }} 👋</h2>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card text-bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Quick Send</h5>
+                <p class="card-text">Transfer money instantly using UPI ID.</p>
+                <a href="{{ url_for('transaction.send') }}" class="btn btn-light">Send Money</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title">Balance & Accounts</h5>
+                <p class="card-text">View linked banks and available balance.</p>
+                <a href="{{ url_for('account.balance') }}" class="btn btn-light">View Balance</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-info h-100">
+            <div class="card-body">
+                <h5 class="card-title">Transaction History</h5>
+                <p class="card-text">See all past transfers with filters.</p>
+                <a href="{{ url_for('transaction.history') }}" class="btn btn-light">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5">
+    <h4>Analytics (coming from #5)</h4>
+    <p class="text-muted">Daily volume, success rate and bank-wise charts will appear here once Chart.js is wired.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Link Bank · PayFlow{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="mb-4">Link Bank Account</h3>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">{{ form.bank_name.label(class="form-label") }}{{ form.bank_name(class="form-control") }}</div>
+                    <div class="mb-3">{{ form.account_number.label(class="form-label") }}{{ form.account_number(class="form-control") }}</div>
+                    <div class="mb-3">{{ form.ifsc_code.label(class="form-label") }}{{ form.ifsc_code(class="form-control") }}</div>
+                    <div class="mb-3">{{ form.account_type.label(class="form-label") }}{{ form.account_type(class="form-select") }}</div>
+                    <div class="mb-3 form-check">{{ form.is_primary(class="form-check-input") }}{{ form.is_primary.label(class="form-check-label") }}</div>
+                    <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
