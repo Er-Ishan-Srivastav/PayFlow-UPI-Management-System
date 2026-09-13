@@ -13,7 +13,7 @@ A simulated UPI transaction platform built to demonstrate core DBMS concepts ins
 
 <br>
 
-`Python` · `Flask` · `MySQL 8` · `SQLAlchemy` · `PyMySQL` · `Bootstrap 5` · `Jinja2` · `WTForms`
+`Python` · `Flask` · `MySQL 8` · `SQLAlchemy` · `PyMySQL` · `Bootstrap 5` · `Jinja2` · `WTForms` · `Chart.js`
 
 <br>
 
@@ -25,19 +25,26 @@ A simulated UPI transaction platform built to demonstrate core DBMS concepts ins
 
 ## 📖 Overview
 
-PayFlow is **simulated end to end** — dummy users, dummy bank accounts, dummy money, no real payment rails, no real bank integration. That's a deliberate scope decision, not a shortcut: the goal is to prove out relational database design, transaction handling, security, analytics, and DBMS concepts in a working system.
+PayFlow is **simulated end to end** — dummy users, dummy bank accounts, dummy money, no real payment rails, and no real bank integration. That's a deliberate scope decision, not a shortcut: the goal is to prove out **relational database design, transaction handling, security, analytics, and DBMS concepts in a working system**, rather than to build a production fintech product.
 
 ### What it does
 
 | | Capability | What it demonstrates |
 |---|---|---|
-| 🔐 | **User Authentication** | Hashed passwords, rate-limited login, CSRF protection |
-| 🏦 | **Bank Account Management** | Account linking, ownership relationships, UPI ID mapping |
+| 🔐 | **User Authentication** | Hashed passwords, rate-limited login, sessions, CSRF protection |
+| 🏦 | **Bank Account Management** | Account linking, ownership relationships, UPI mapping |
+| 💳 | **UPI Management** | UPI ID creation, validation, and beneficiary workflows |
 | 💸 | **Fund Transfers** | ACID debit/credit workflow with concurrency control |
 | 🧾 | **Transaction History** | Search, filtering, status tracking, detailed audit history |
 | 📊 | **Reports & Analytics** | Daily summaries, bank-wise reports, user-level insights |
 | 🛡️ | **Fraud Detection** | High-value, rapid-fire, and repeated-failure rules |
 | 💬 | **Complaints** | Raise, track, and manage transaction-related complaints |
+
+### Project Philosophy
+
+> **Not just a CRUD app. A database story in action.**
+
+The project turns lecture-slide DBMS concepts into workflows that can actually be demonstrated: a user logs in, links an account, creates a UPI ID, sends simulated money, triggers transaction processing, generates audit records, and then explores the resulting data through reports and analytics.
 
 ---
 
@@ -50,11 +57,12 @@ PayFlow is **simulated end to end** — dummy users, dummy bank accounts, dummy 
 - CSRF-protected forms
 - Secure user workflows
 
-### 💳 UPI & Banking
+### 🏦 Bank & UPI Management
 - Link simulated bank accounts
 - Mint UPI IDs against bank accounts
 - Manage beneficiaries
 - Validate UPI relationships and ownership
+- Enforce relational constraints
 
 ### ⚡ ACID Transaction Engine
 - `START TRANSACTION`
@@ -63,6 +71,7 @@ PayFlow is **simulated end to end** — dummy users, dummy bank accounts, dummy 
 - `ROLLBACK` on failure
 - Row-level locking
 - Optimistic concurrency using a `version` column
+- Transaction logging and status tracking
 
 ### 🛡️ Fraud Detection
 - High-value transaction detection
@@ -70,17 +79,18 @@ PayFlow is **simulated end to end** — dummy users, dummy bank accounts, dummy 
 - Repeated-failure detection
 - Fraud flags connected to transaction history
 
-### 📊 Analytics
+### 📊 Analytics & Reporting
 - Daily transaction summaries
 - Bank-wise balance reports
 - User-level transaction summaries
 - SQL aggregation, joins, CTEs and window functions
+- Dashboard-ready reporting views
 
-### 🧾 Auditability
-- Transaction logs
-- Status-change logs
-- Database triggers
-- Complaint tracking
+### 💬 Complaints
+- Raise complaints against transactions
+- Track complaint status
+- Link complaints to users and transactions
+- Support future admin/triage workflows
 
 ---
 
@@ -95,6 +105,7 @@ flowchart LR
         DASH["Dashboard"]
         TXUI["Transactions"]
         COMPUI["Complaints"]
+        REPORT["Reports"]
     end
 
     subgraph A["⚙️ Application Layer — Flask"]
@@ -103,6 +114,7 @@ flowchart LR
         CORE["Business Logic"]
         FRAUD["Fraud Rule Engine"]
         TX["Transaction Engine"]
+        COMP["Complaint Workflow"]
     end
 
     subgraph DA["🔌 Data Access Layer"]
@@ -122,6 +134,7 @@ flowchart LR
     UI --> DASH
     UI --> TXUI
     UI --> COMPUI
+    UI --> REPORT
 
     UI --> AUTH
     UI --> FORMS
@@ -129,6 +142,8 @@ flowchart LR
 
     CORE --> TX
     CORE --> FRAUD
+    CORE --> COMP
+
     TX --> ORM
     AUTH --> ORM
     CORE --> RAW
@@ -142,13 +157,13 @@ flowchart LR
     TABLES --> SP
 ```
 
-### Design principle
-
-Each layer has a clear responsibility:
+### Architectural Principle
 
 **Presentation → Application → Data Access → Database**
 
-The dashboard does not directly manipulate database tables, while database-side objects such as **views, triggers, constraints, and stored procedures** keep important DBMS logic close to the data.
+Each layer has a clear responsibility. The dashboard does not directly manipulate database tables, while database-side objects such as **views, triggers, constraints, and stored procedures** keep important DBMS logic close to the data.
+
+This separation also makes parallel team development easier by giving each contributor a defined ownership boundary.
 
 ---
 
@@ -160,6 +175,7 @@ sequenceDiagram
     participant U as Sender
     participant F as Flask App
     participant E as Transaction Engine
+    participant P as Stored Procedure
     participant DB as MySQL
     participant FR as Fraud Engine
 
@@ -167,31 +183,32 @@ sequenceDiagram
     F->>DB: Validate receiver and ownership
     F->>DB: Validate sender balance
     F->>E: Start transfer
-    E->>DB: BEGIN TRANSACTION
+    E->>P: Call sp_transfer_money()
+    P->>DB: BEGIN TRANSACTION
 
-    E->>DB: Lock sender row
-    E->>DB: Lock receiver row
+    P->>DB: Lock sender row
+    P->>DB: Lock receiver row
     Note over DB: SELECT ... FOR UPDATE
 
-    E->>DB: Debit sender
-    E->>DB: Credit receiver
-    E->>DB: INSERT transaction
-    E->>DB: INSERT audit/log records
+    P->>DB: Debit sender
+    P->>DB: Credit receiver
+    P->>DB: INSERT transaction
+    P->>DB: INSERT audit/log records
 
     alt All operations succeed
-        E->>DB: COMMIT
+        P->>DB: COMMIT
         DB-->>F: SUCCESS
         F->>FR: Evaluate fraud rules
         FR-->>F: Flags / clear
         F-->>U: Payment successful
     else Any operation fails
-        E->>DB: ROLLBACK
+        P->>DB: ROLLBACK
         DB-->>F: ERROR
         F-->>U: Payment failed
     end
 ```
 
-### ACID guarantee
+### ACID Guarantee
 
 The central invariant is simple:
 
@@ -277,6 +294,20 @@ upi_db
 
 ---
 
+## 📊 By the Numbers
+
+<div align="center">
+
+| 👥 Dummy Users | 🏦 Bank Accounts | 💳 UPI IDs | 🤝 Beneficiaries | 🔁 Transactions |
+|:---:|:---:|:---:|:---:|:---:|
+| **1,000** | **1,231** | **1,000** | **2,970** | **10,000** |
+
+</div>
+
+The seeded dataset is intentionally large enough to make **reporting, indexing, transaction history, aggregation, and fraud-detection features meaningful during a demonstration**.
+
+---
+
 ## 🛠️ Technology Stack
 
 | Layer | Technology | Purpose |
@@ -329,6 +360,8 @@ upi_db
 ┃ ┗ 📜 seed_data.sql
 ┣ 📂 migrations/
 ┣ 📂 tests/
+┣ 📂 assets/
+┃ ┗ 🖼️ payflow-banner.png
 ┣ 📜 .env.example
 ┣ 📜 requirements.txt
 ┣ 📜 run.py
@@ -337,32 +370,20 @@ upi_db
 
 ---
 
-## 📊 Project Dataset
-
-<div align="center">
-
-| 👤 Users | 🏦 Bank Accounts | 💳 UPI IDs | 👥 Beneficiaries | 🔄 Transactions |
-|:---:|:---:|:---:|:---:|:---:|
-| **1,000** | **1,231** | **1,000** | **2,970** | **10,000** |
-
-</div>
-
-The seed dataset is intentionally large enough to make the reporting, indexing, transaction history, aggregation, and fraud-detection features meaningful during a demonstration.
-
----
-
 ## 📸 Screenshots / UI
 
 > Add the strongest application screenshots here before final submission.
 
-Recommended sequence:
+Recommended showcase sequence:
 
-1. **Dashboard** — balances, daily activity and analytics
-2. **Send Money** — receiver validation + transfer form
-3. **Transaction History** — filters and detailed logs
-4. **Bank / UPI Management** — linked accounts and UPI IDs
-5. **Reports** — database-backed analytics
-6. **Fraud / Complaints** — exception workflows
+| # | Screenshot | What it demonstrates |
+|---:|---|---|
+| 01 | **Dashboard** | Balances, activity, charts and analytics |
+| 02 | **Send Money** | Receiver validation + transfer workflow |
+| 03 | **Transaction History** | Filtering, status and detailed logs |
+| 04 | **Bank / UPI Management** | Linked accounts, UPI IDs and beneficiaries |
+| 05 | **Reports** | Database-backed analytics |
+| 06 | **Fraud / Complaints** | Exception and monitoring workflows |
 
 ---
 
@@ -442,13 +463,13 @@ http://127.0.0.1:5000
 
 ## 🧪 Testing
 
-Run the full test suite:
+Run the complete suite:
 
 ```bash
 pytest tests/ -v
 ```
 
-The test plan covers:
+The testing strategy covers:
 
 - Authentication success/failure
 - Bank account workflows
