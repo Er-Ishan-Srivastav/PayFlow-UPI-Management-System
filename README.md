@@ -479,9 +479,9 @@ The test plan covers:
 | **#1 Database Lead** | Harsh Jadhav | `models/`, `schema.sql`, seed data, migrations, ERD | Schema, indexes, views |
 | **#2 Auth & Core Backend** | Komal Londhe | App factory, config, auth blueprint, security | Login, rate-limiting, CSRF |
 | **#3 Transaction Engine** | Hansal | Transaction routes + services | ACID, locking, send-money correctness |
-| **#4 CRUD & Complaints** | Krunal | Account routes, UPI linking, complaints | Bank/UPI CRUD, complaint workflow |
+| **#4 CRUD & Complaints** | Krunal Sahare | Account routes, UPI linking, complaints | Bank/UPI CRUD, complaint workflow |
 | **#5 SQL Analytics** | Khushi Joshi | Analytics queries, views, reporting | Dashboard data feeds |
-| **#6 Dashboard & Frontend** | Harshavardhan | Templates, static assets, Chart.js | UI + visualizations |
+| **#6 Dashboard & Frontend** | Harshavardhan Dhole | Templates, static assets, Chart.js | UI + visualizations |
 | **#7 Integration & QA** | Ishan Srivastav | Git workflow, fraud engine, tests, README | Integration, QA, end-to-end demo |
 
 ---
@@ -502,7 +502,7 @@ The test plan covers:
 ```bibtex
 @project{payflow2026,
   title   = {PayFlow: A Simulated UPI Transaction System Demonstrating Core DBMS Concepts},
-  author  = {Jadhav, Harsh and Londhe, Komal and Hansal and Krunal and Joshi, Khushi and Harshavardhan and Srivastav, Ishan},
+  author  = {Harsh Jadhav, Komal Londhe, Hansal, Krunal Sahare, Khushi Joshi, Harshavardhan Dhole, Ishan Srivastav},
   school  = {CDAC Kharghar, Navi Mumbai},
   year    = {2026},
   note    = {PGCP - BDA Minor Project}
