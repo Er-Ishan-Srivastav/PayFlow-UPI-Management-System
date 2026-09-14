@@ -1,11 +1,156 @@
 {% extends "base.html" %}
+
 {% block title %}Sign in · PayFlow{% endblock %}
+
 {% block content %}
 <div class="auth-shell">
-  <div class="auth-brand"><span class="brand-mark">P</span><span class="brand-word">Pay<span>Flow</span></span></div>
+
+  <div class="auth-brand">
+    <span class="brand-mark">P</span>
+    <span class="brand-word">Pay<span>Flow</span></span>
+  </div>
+
   <div class="auth-grid">
-    <section class="auth-visual"><div class="visual-glow"></div><span class="eyebrow">SIMULATED UPI TRANSACTION PLATFORM</span><h1>Move money.<br><em>Know exactly where it went.</em></h1><p>Experience a financial workflow built around real database concepts — transactions, locking, audit trails and analytics.</p><div class="visual-points"><span>01 · ACID</span><span>02 · SQL</span><span>03 · ANALYTICS</span></div></section>
-    <section class="auth-card-panel"><div class="auth-card-head"><div><span class="eyebrow">WELCOME BACK</span><h2>Sign in</h2><p>Access your PayFlow workspace.</p></div></div><form method="post" class="smart-form auth-form">{{ form.hidden_tag() }}<div class="field-block"><label>{{ form.login.label.text }}</label>{{ form.login(placeholder="rahul@gmail.com") }}</div><div class="field-block"><label>{{ form.password.label.text }}</label>{{ form.password(placeholder="••••••••") }}</div><label class="check-row">{{ form.remember() }}<span>Remember me</span></label>{{ form.submit(class="btn btn-primary btn-xl full") }}</form><p class="auth-switch">New to PayFlow? <a href="{{ url_for('auth.register') }}">Create an account</a></p><div class="demo-panel"><span class="eyebrow">DEMO ACCESS</span><strong>rahul@gmail.com</strong><span>Password <code>1234</code> · UPI PIN <code>1234</code></span><small>Try a payment to <code>priya@hdfc</code>.</small></div></section>
+
+    <!-- LEFT SIDE -->
+    <section class="auth-visual">
+      <div class="visual-glow"></div>
+
+      <div class="auth-visual-content">
+        <span class="eyebrow">SIMULATED UPI TRANSACTION PLATFORM</span>
+
+        <h1>
+          Move money.<br>
+          <em>Know exactly where it went.</em>
+        </h1>
+
+        <p>
+          Experience a financial workflow built around real database
+          concepts — transactions, locking, audit trails and analytics.
+        </p>
+
+        <div class="visual-points">
+          <span>01 · ACID</span>
+          <span>02 · SQL</span>
+          <span>03 · ANALYTICS</span>
+        </div>
+      </div>
+
+      <div class="visual-footer">
+        <div class="visual-footer-line"></div>
+        <span>PAYFLOW / DATABASE-FIRST FINANCE</span>
+      </div>
+    </section>
+
+
+    <!-- RIGHT SIDE -->
+    <section class="auth-card-panel">
+
+      <div class="auth-card-head">
+        <span class="eyebrow">WELCOME BACK</span>
+
+        <h2>Sign in</h2>
+
+        <p>
+          Access your PayFlow workspace.
+        </p>
+      </div>
+
+
+      <form method="post" class="smart-form auth-form">
+
+        {{ form.hidden_tag() }}
+
+        <div class="field-block">
+          <label>{{ form.login.label.text }}</label>
+          {{ form.login(placeholder="Email or phone") }}
+        </div>
+
+        <div class="field-block">
+          <label>{{ form.password.label.text }}</label>
+          {{ form.password(placeholder="Enter your password") }}
+        </div>
+
+        <label class="check-row">
+          {{ form.remember() }}
+          <span>Remember me</span>
+        </label>
+
+        {{ form.submit(class="btn btn-primary btn-xl full") }}
+
+      </form>
+
+
+      <p class="auth-switch">
+        New to PayFlow?
+        <a href="{{ url_for('auth.register') }}">Create an account</a>
+      </p>
+
+
+      <!-- PRODUCT INFO -->
+      <div class="login-info-card">
+
+        <div class="login-info-header">
+          <div>
+            <span class="eyebrow">PAYFLOW / SYSTEM</span>
+            <strong>Built around transaction integrity.</strong>
+          </div>
+
+          <span class="system-status">
+            <i></i>
+            ONLINE
+          </span>
+        </div>
+
+
+        <div class="login-features">
+
+          <div class="login-feature">
+            <div class="login-feature-icon">↔</div>
+            <div>
+              <strong>ACID</strong>
+              <span>Reliable transactions</span>
+            </div>
+          </div>
+
+          <div class="login-feature">
+            <div class="login-feature-icon">⌁</div>
+            <div>
+              <strong>SQL</strong>
+              <span>Structured data control</span>
+            </div>
+          </div>
+
+          <div class="login-feature">
+            <div class="login-feature-icon">◈</div>
+            <div>
+              <strong>LOCKING</strong>
+              <span>Concurrent balance safety</span>
+            </div>
+          </div>
+
+          <div class="login-feature">
+            <div class="login-feature-icon">⌁</div>
+            <div>
+              <strong>AUDIT</strong>
+              <span>Trace every movement</span>
+            </div>
+          </div>
+
+        </div>
+
+
+        <div class="login-info-footer">
+          <span>FLASK</span>
+          <span>MYSQL</span>
+          <span>SQLALCHEMY</span>
+          <span>CHART.JS</span>
+        </div>
+
+      </div>
+
+    </section>
+
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}System · Admin{% endblock %}
+{% block breadcrumb %}<span>Admin</span><b>›</b><strong>System</strong>{% endblock %}
+{% block content %}
+<section class="hero-row compact-head page-enter">
+  <div>
+    <div class="eyebrow">AUDIT TRAIL</div>
+    <h1>System logs</h1>
+    <p class="hero-sub">Transaction lifecycle events and status transitions.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('admin.console') }}">← Console</a>
+</section>
+<section class="page-enter delay-1">
+  <article class="card table-card">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Log ID</th><th>Txn</th><th>Action</th><th>From</th><th>To</th><th>Time</th></tr></thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="mono">{{ log.log_id }}</td>
+            <td class="mono">{{ log.txn_id or '—' }}</td>
+            <td><strong>{{ log.action }}</strong></td>
+            <td>{{ log.old_status or '—' }}</td>
+            <td>{{ log.new_status or '—' }}</td>
+            <td class="mono">{{ log.log_time.strftime('%d %b %Y %H:%M:%S') if log.log_time else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">No logs yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

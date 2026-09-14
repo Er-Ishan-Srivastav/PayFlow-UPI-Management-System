@@ -16,6 +16,8 @@ class Transaction(db.Model):
     reference_id = db.Column(db.String(36), nullable=False, unique=True, index=True)
     remarks = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    # Additive column — does not break existing schema/data
+    is_flagged = db.Column(db.Boolean, default=False, nullable=False)
 
     sender_upi_rel = db.relationship("UPIId", foreign_keys=[sender_upi])
     receiver_upi_rel = db.relationship("UPIId", foreign_keys=[receiver_upi])

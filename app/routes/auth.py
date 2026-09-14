@@ -13,7 +13,6 @@ def _is_safe_redirect(target: str) -> bool:
     """Prevent open redirects – only allow relative local paths."""
     if not target:
         return False
-    # Reject absolute URLs / protocol-relative
     parsed = urlparse(target)
     if parsed.netloc or parsed.scheme:
         return False
@@ -32,14 +31,23 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         ident = form.login.data.strip()
-        user = User.query.filter(
-            or_(User.email == ident.lower(), User.phone == ident)
-        ).first()
-        if user and user.is_active and user.check_password(form.password.data):
+        # Alias: plain "admin" maps to the system admin account
+        if ident.lower() == "admin":
+            user = User.query.filter_by(email="admin@payflow.local").first()
+        else:
+            user = User.query.filter(
+                or_(User.email == ident.lower(), User.phone == ident)
+            ).first()
+        if user and user.check_password(form.password.data):
+            if not user.is_active:
+                flash("Your account has been blocked. Contact support.", "danger")
+                return render_template("auth/login.html", form=form)
             login_user(user, remember=form.remember.data)
             nxt = request.args.get("next")
             if nxt and _is_safe_redirect(nxt):
                 return redirect(nxt)
+            if getattr(user, "is_admin", False):
+                return redirect(url_for("admin.console"))
             return redirect(url_for("dashboard.index"))
         flash("Invalid credentials.", "danger")
     return render_template("auth/login.html", form=form)

@@ -34,6 +34,32 @@ document.addEventListener('DOMContentLoaded', () => {
     field.addEventListener('blur', () => field.closest('.field-block')?.classList.remove('focused'));
   });
 
+  // Profile modal
+  const profileModal = document.getElementById('profileModal');
+  const openProfile = () => {
+    if (!profileModal) return;
+    profileModal.classList.add('open');
+    profileModal.setAttribute('aria-hidden', 'false');
+  };
+  const closeProfile = () => {
+    if (!profileModal) return;
+    profileModal.classList.remove('open');
+    profileModal.setAttribute('aria-hidden', 'true');
+  };
+  document.querySelectorAll('.profile-trigger').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      openProfile();
+    });
+  });
+  document.getElementById('closeProfile')?.addEventListener('click', closeProfile);
+  profileModal?.addEventListener('click', (e) => {
+    if (e.target === profileModal) closeProfile();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProfile();
+  });
+
   window.setTimeout(() => {
     document.querySelectorAll('.flash').forEach((flash) => flash.classList.add('visible'));
   }, 30);

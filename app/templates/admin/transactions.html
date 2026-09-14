@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Transactions · Admin{% endblock %}
+{% block breadcrumb %}<span>Admin</span><b>›</b><strong>Transactions</strong>{% endblock %}
+{% block content %}
+<section class="hero-row compact-head page-enter">
+  <div>
+    <div class="eyebrow">GLOBAL LEDGER</div>
+    <h1>All transactions</h1>
+    <p class="hero-sub">Flag suspicious activity, mark failed, or filter by status.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('admin.console') }}">← Console</a>
+</section>
+<section class="page-enter delay-1">
+  <form class="filter-bar" method="get">
+    <div class="search-box"><span>⌕</span><input name="q" value="{{ q }}" placeholder="Reference or remarks…" /></div>
+    <div class="filter-control">
+      <select name="status">
+        <option value="">All statuses</option>
+        <option value="SUCCESS" {% if status=='SUCCESS' %}selected{% endif %}>Success</option>
+        <option value="FAILED" {% if status=='FAILED' %}selected{% endif %}>Failed</option>
+        <option value="PENDING" {% if status=='PENDING' %}selected{% endif %}>Pending</option>
+      </select>
+    </div>
+    <label class="check-row" style="white-space:nowrap">
+      <input type="checkbox" name="flagged" value="1" {% if flagged_only %}checked{% endif %} /> Flagged only
+    </label>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
+  <article class="card table-card" style="margin-top:14px">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Reference</th><th>Amount</th><th>Status</th><th>Flag</th><th>Remarks</th><th>Time</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in txns %}
+          <tr {% if t.is_flagged %}style="background:rgba(255,111,111,.06)"{% endif %}>
+            <td class="mono">{{ t.reference_id }}</td>
+            <td class="amount-cell">{{ t.amount | inr }}</td>
+            <td>
+              <span class="status-pill {% if t.status == 'SUCCESS' %}success{% elif t.status == 'FAILED' %}danger{% else %}warning{% endif %}">
+                {{ t.status }}
+              </span>
+            </td>
+            <td>
+              {% if t.is_flagged %}<span class="status-pill danger">FLAGGED</span>{% else %}<span class="muted-text">—</span>{% endif %}
+            </td>
+            <td>{{ t.remarks or '—' }}</td>
+            <td class="mono">{{ t.timestamp.strftime('%d %b %Y %H:%M') if t.timestamp else '—' }}</td>
+            <td>
+              <div class="person-actions" style="flex-wrap:wrap">
+                {% if not t.is_flagged %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="txn_id" value="{{ t.txn_id }}" />
+                  <input type="hidden" name="action" value="flag" />
+                  <button class="btn sm btn-secondary" type="submit">Flag</button>
+                </form>
+                {% else %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="txn_id" value="{{ t.txn_id }}" />
+                  <input type="hidden" name="action" value="unflag" />
+                  <button class="btn sm btn-primary" type="submit">Unflag</button>
+                </form>
+                {% endif %}
+                {% if t.status != 'FAILED' %}
+                <form method="post" style="display:inline" onsubmit="return confirm('Mark this transaction as FAILED?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="txn_id" value="{{ t.txn_id }}" />
+                  <input type="hidden" name="action" value="mark_failed" />
+                  <button class="btn sm btn-secondary" type="submit" style="color:#ff8989">Fail</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7">No transactions</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

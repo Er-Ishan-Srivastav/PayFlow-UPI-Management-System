@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#090b0e" />
-  <title>{% block title %}PayFlow{% endblock %}</title>
+  <title>{% block title %}PayFlow UPI{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -17,19 +17,20 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a class="brand" href="{{ url_for('dashboard.index') }}">
-          <span class="brand-mark">P</span>
+          <span class="brand-mark"><span class="brand-mark-inner">P</span></span>
           <span class="brand-word">Pay<span>Flow</span></span>
         </a>
         <button class="mobile-close" type="button" data-sidebar-close aria-label="Close navigation">×</button>
       </div>
 
-      <div class="profile-mini">
+      <button type="button" class="profile-mini profile-trigger" id="openProfile" aria-label="Open profile">
         <div class="avatar">{{ current_user.full_name[:1]|upper }}</div>
         <div class="profile-mini-copy">
           <strong>{{ current_user.full_name }}</strong>
           <span>{{ current_user.email }}</span>
         </div>
-      </div>
+        <span class="profile-chevron">›</span>
+      </button>
 
       <nav class="nav-section" aria-label="Main navigation">
         <div class="nav-label">Workspace</div>
@@ -56,10 +57,17 @@
         <a href="{{ url_for('beneficiary.index') }}" class="nav-item {% if request.endpoint == 'beneficiary.index' %}active{% endif %}">
           <span class="nav-icon">◎</span><span>People</span>
         </a>
+
+        {% if current_user.is_admin %}
+        <div class="nav-label nav-label-spaced">Admin</div>
+        <a href="{{ url_for('admin.console') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+          <span class="nav-icon">⚙</span><span>Admin console</span>
+        </a>
+        {% endif %}
       </nav>
 
       <div class="sidebar-bottom">
-        <div class="security-chip"><span class="pulse-dot"></span> Secure session</div>
+        <div class="security-chip"><span class="pulse-dot"></span> ACID · Secure session</div>
         <a class="signout" href="{{ url_for('auth.logout') }}"><span>↪</span> Sign out</a>
       </div>
     </aside>
@@ -72,7 +80,7 @@
         <div class="crumb">{% block breadcrumb %}<span>PayFlow</span>{% endblock %}</div>
         <div class="topbar-actions">
           <span class="live-pill"><span></span> System online</span>
-          <div class="top-avatar">{{ current_user.full_name[:1]|upper }}</div>
+          <button type="button" class="top-avatar profile-trigger" id="openProfileTop" title="My profile">{{ current_user.full_name[:1]|upper }}</button>
         </div>
       </header>
 
@@ -100,6 +108,52 @@
   </div>
   {% if current_user.is_authenticated %}
     </main>
+  </div>
+
+  <!-- Profile modal -->
+  <div class="modal-overlay" id="profileModal" aria-hidden="true">
+    <div class="modal-panel profile-modal" role="dialog" aria-labelledby="profileTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">ACCOUNT</span>
+          <h2 id="profileTitle">My profile</h2>
+        </div>
+        <button type="button" class="modal-close" id="closeProfile" aria-label="Close">×</button>
+      </div>
+      <div class="profile-modal-body">
+        <div class="profile-hero">
+          <div class="avatar large">{{ current_user.full_name[:1]|upper }}</div>
+          <div>
+            <strong class="profile-name">{{ current_user.full_name }}</strong>
+            <span class="profile-email">{{ current_user.email }}</span>
+            {% if current_user.is_admin %}<span class="status-pill success">Admin</span>{% endif %}
+          </div>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-stat">
+            <span class="eyebrow">Phone</span>
+            <strong>{{ current_user.phone }}</strong>
+          </div>
+          <div class="profile-stat">
+            <span class="eyebrow">Primary UPI</span>
+            <strong class="mono">{{ current_user.primary_upi.upi_address if current_user.primary_upi else '—' }}</strong>
+          </div>
+          <div class="profile-stat">
+            <span class="eyebrow">Total balance</span>
+            <strong>{{ current_user.total_balance | inr }}</strong>
+          </div>
+          <div class="profile-stat">
+            <span class="eyebrow">Member since</span>
+            <strong>{{ current_user.created_at.strftime('%d %b %Y') if current_user.created_at else '—' }}</strong>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <a class="btn btn-secondary" href="{{ url_for('account.banks') }}">Bank accounts</a>
+          <a class="btn btn-secondary" href="{{ url_for('account.manage_upi') }}">UPI IDs</a>
+          <a class="btn btn-primary" href="{{ url_for('transaction.send') }}">Send money</a>
+        </div>
+      </div>
+    </div>
   </div>
   {% endif %}
 

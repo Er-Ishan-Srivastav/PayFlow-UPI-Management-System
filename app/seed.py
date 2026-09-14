@@ -1,7 +1,7 @@
 """Seed demo users with real Werkzeug hashes.
 Demo credentials:
-  email: rahul@gmail.com (and others)
-  password: password123
+  Admin console:  admin  /  admin   (or admin@payflow.local)
+  Regular users:  rahul@gmail.com (and others) / password123
   UPI PIN: 1234
 """
 from datetime import datetime, timedelta
@@ -79,6 +79,19 @@ def seed(force=False):
 
     pw = generate_password_hash("password123")
     pin = generate_password_hash("1234")
+    admin_pw = generate_password_hash("admin")
+
+    # Dedicated system admin — login: admin / admin  (or admin@payflow.local)
+    admin = User(
+        full_name="System Admin",
+        email="admin@payflow.local",
+        phone="9000000000",
+        password_hash=admin_pw,
+        is_active=True,
+        is_admin=True,
+    )
+    db.session.add(admin)
+    db.session.flush()
 
     users = []
     accounts = []
@@ -90,6 +103,7 @@ def seed(force=False):
             phone=row["phone"],
             password_hash=pw,
             is_active=True,
+            is_admin=False,
         )
         db.session.add(u)
         db.session.flush()

@@ -55,6 +55,7 @@ def create_app(test_config=None):
     from app.routes.transaction import transaction_bp
     from app.routes.beneficiary import beneficiary_bp
     from app.routes.reports import reports_bp
+    from app.routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -62,6 +63,7 @@ def create_app(test_config=None):
     app.register_blueprint(transaction_bp)
     app.register_blueprint(beneficiary_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(admin_bp)
 
     with app.app_context():
         from app import models  # noqa: F401

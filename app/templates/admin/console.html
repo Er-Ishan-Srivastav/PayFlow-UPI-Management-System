@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Admin Console · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Admin</span><b>›</b><strong>Console</strong>{% endblock %}
+{% block content %}
+<section class="hero-row compact-head page-enter">
+  <div>
+    <div class="eyebrow">SYSTEM CONTROL</div>
+    <h1>Admin console</h1>
+    <p class="hero-sub">Global overview of users, balances, transactions and system health. Admin login: <code>admin</code> / <code>admin</code></p>
+  </div>
+  <div class="hero-actions">
+    <a class="btn btn-secondary" href="{{ url_for('admin.users') }}">Users</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin.transactions') }}">Transactions</a>
+    <a class="btn btn-primary" href="{{ url_for('admin.system') }}">System logs</a>
+  </div>
+</section>
+
+<section class="admin-grid page-enter delay-1">
+  <article class="card admin-stat"><div class="stat-icon balance">👤</div><div class="stat-copy"><span class="eyebrow">USERS</span><strong>{{ stats.users }}</strong><span>{{ stats.active_users }} active</span></div></article>
+  <article class="card admin-stat"><div class="stat-icon sent">▣</div><div class="stat-copy"><span class="eyebrow">BANK ACCOUNTS</span><strong>{{ stats.accounts }}</strong><span>{{ stats.upi_ids }} UPI IDs</span></div></article>
+  <article class="card admin-stat"><div class="stat-icon received">↔</div><div class="stat-copy"><span class="eyebrow">TRANSACTIONS</span><strong>{{ stats.transactions }}</strong><span>{{ stats.success_txns }} success · {{ stats.failed_txns }} failed</span></div></article>
+  <article class="card admin-stat"><div class="stat-icon failed">₹</div><div class="stat-copy"><span class="eyebrow">VOLUME / BALANCE</span><strong>{{ stats.total_volume | inr }}</strong><span>Ledger balance {{ stats.total_balance | inr }}</span></div></article>
+</section>
+
+<section class="admin-grid page-enter delay-1" style="margin-top:14px;grid-template-columns:repeat(3,1fr)">
+  <article class="card admin-stat"><div class="stat-icon failed">⚑</div><div class="stat-copy"><span class="eyebrow">FLAGGED</span><strong>{{ stats.flagged_txns }}</strong><span><a class="text-link" href="{{ url_for('admin.transactions', flagged=1) }}">Review flagged →</a></span></div></article>
+  <article class="card admin-stat"><div class="stat-icon sent">⊘</div><div class="stat-copy"><span class="eyebrow">BLOCKED USERS</span><strong>{{ stats.blocked_users }}</strong><span><a class="text-link" href="{{ url_for('admin.users') }}">Manage access →</a></span></div></article>
+  <article class="card admin-stat"><div class="stat-icon balance">＋</div><div class="stat-copy"><span class="eyebrow">QUICK ACTIONS</span><strong style="font-size:14px">Create / Block / Flag</strong><span><a class="text-link" href="{{ url_for('admin.users') }}">Open users →</a></span></div></article>
+</section>
+
+<section class="chart-row page-enter delay-2">
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">ACTIVITY</span><h2>Daily volume (last 14 days)</h2></div></div>
+    <div class="chart-wrap tall"><canvas id="adminVolChart"></canvas></div>
+  </article>
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">STATUS</span><h2>Transaction outcomes</h2></div></div>
+    <div class="chart-wrap square"><canvas id="adminStatusChart"></canvas></div>
+  </article>
+</section>
+
+<section class="two-col page-enter delay-3">
+  <article class="card table-card">
+    <div class="section-head"><div><span class="eyebrow">RECENT</span><h2>Latest users</h2></div><a class="text-link" href="{{ url_for('admin.users') }}">All users →</a></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Admin</th><th>Joined</th></tr></thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td class="mono">{{ u.email }}</td>
+            <td>{% if u.is_admin %}<span class="admin-badge">Admin</span>{% else %}<span class="muted-text">—</span>{% endif %}</td>
+            <td class="mono">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No users</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  <article class="card table-card">
+    <div class="section-head"><div><span class="eyebrow">BANKING</span><h2>Bank distribution</h2></div></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for name, cnt, bal in bank_dist %}
+          <tr><td>{{ name }}</td><td>{{ cnt }}</td><td>{{ bal | inr }}</td></tr>
+          {% else %}
+          <tr><td colspan="3">No data</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="page-enter" style="margin-top:14px">
+  <article class="card table-card">
+    <div class="section-head"><div><span class="eyebrow">LIVE</span><h2>Recent transactions</h2></div><a class="text-link" href="{{ url_for('admin.transactions') }}">View all →</a></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Ref</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+        <tbody>
+          {% for t in recent_txns %}
+          <tr>
+            <td class="mono">{{ t.reference_id[:12] }}…</td>
+            <td class="amount-cell">{{ t.amount | inr }}</td>
+            <td><span class="status-pill {% if t.status == 'SUCCESS' %}success{% elif t.status == 'FAILED' %}danger{% else %}warning{% endif %}">{{ t.status }}</span></td>
+            <td class="mono">{{ t.timestamp.strftime('%d %b %H:%M') if t.timestamp else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No transactions</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+const daily = {{ daily | map(attribute=0) | list | tojson }};
+const dailyCounts = {{ daily | map(attribute=1) | list | tojson }};
+const dailyVol = {{ daily | map(attribute=2) | list | tojson }};
+const dailyFail = {{ daily | map(attribute=3) | list | tojson }};
+const statusLabels = {{ status_dist | map(attribute=0) | list | tojson }};
+const statusCounts = {{ status_dist | map(attribute=1) | list | tojson }};
+
+const labels = daily.map(d => {
+  if (!d) return '';
+  const s = String(d);
+  return s.length > 5 ? s.slice(5) : s;
+});
+
+const volCtx = document.getElementById('adminVolChart');
+if (volCtx) {
+  new Chart(volCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Volume (₹)', data: dailyVol.map(v => Number(v||0)), backgroundColor: 'rgba(65,230,196,.35)', borderColor: '#41e6c4', borderWidth: 1, borderRadius: 6, yAxisID: 'y' },
+        { label: 'Failed', data: dailyFail.map(v => Number(v||0)), type: 'line', borderColor: '#ff6f6f', backgroundColor: 'rgba(255,111,111,.1)', tension: .3, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#93a0ad', usePointStyle: true } } },
+      scales: {
+        x: { ticks: { color: '#6f7b87' }, grid: { display: false } },
+        y: { position: 'left', ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.05)' } },
+        y1: { position: 'right', ticks: { color: '#ff8989' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+const stCtx = document.getElementById('adminStatusChart');
+if (stCtx) {
+  new Chart(stCtx, {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{
+        data: statusCounts,
+        backgroundColor: ['rgba(65,230,196,.75)', 'rgba(255,111,111,.7)', 'rgba(244,189,99,.7)', 'rgba(108,142,255,.6)'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#93a0ad', usePointStyle: true, padding: 16 } } }
+    }
+  });
+}
+</script>
+{% endblock %}

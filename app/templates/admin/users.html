@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Users · Admin{% endblock %}
+{% block breadcrumb %}<span>Admin</span><b>›</b><strong>Users</strong>{% endblock %}
+{% block content %}
+<section class="hero-row compact-head page-enter">
+  <div>
+    <div class="eyebrow">USER DIRECTORY</div>
+    <h1>All users</h1>
+    <p class="hero-sub">Create accounts, block access, or delete users. Hard delete falls back to block if transactions still reference the account.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('admin.console') }}">← Console</a>
+</section>
+
+<section class="two-col page-enter delay-1">
+  <article class="card form-card">
+    <div class="section-head"><div><span class="eyebrow">CREATE</span><h2>New account</h2></div></div>
+    <form method="post" class="smart-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="action" value="create" />
+      <div class="field-block">
+        <label>Full name</label>
+        <input name="full_name" required maxlength="50" placeholder="Jane Doe" />
+      </div>
+      <div class="form-grid">
+        <div class="field-block">
+          <label>Email</label>
+          <input name="email" type="email" required maxlength="50" placeholder="jane@example.com" />
+        </div>
+        <div class="field-block">
+          <label>Phone</label>
+          <input name="phone" required maxlength="15" placeholder="9876543210" />
+        </div>
+      </div>
+      <div class="field-block">
+        <label>Password</label>
+        <input name="password" type="text" value="password123" maxlength="64" />
+      </div>
+      <label class="check-row"><input type="checkbox" name="is_admin" /> Grant admin rights</label>
+      <button class="btn btn-primary full" type="submit" data-loading=" Creating…">Create user</button>
+    </form>
+  </article>
+
+  <div>
+    <form class="filter-bar" method="get">
+      <div class="search-box"><span>⌕</span><input name="q" value="{{ q }}" placeholder="Search name, email or phone…" /></div>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    <article class="card table-card" style="margin-top:14px">
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>Contact</th><th>Role</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="mono">{{ u.user_id }}</td>
+              <td><strong>{{ u.full_name }}</strong></td>
+              <td>
+                <span class="mono">{{ u.email }}</span><br>
+                <span class="muted-text mono">{{ u.phone }}</span>
+              </td>
+              <td>{% if u.is_admin %}<span class="admin-badge">Admin</span>{% else %}<span class="muted-text">User</span>{% endif %}</td>
+              <td>
+                <span class="status-pill {% if u.is_active %}success{% else %}danger{% endif %}">
+                  {{ 'Active' if u.is_active else 'Blocked' }}
+                </span>
+              </td>
+              <td>
+                {% if u.user_id != current_user.user_id %}
+                <div class="person-actions" style="flex-wrap:wrap">
+                  {% if u.is_active %}
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="user_id" value="{{ u.user_id }}" />
+                    <input type="hidden" name="action" value="block" />
+                    <button class="btn sm btn-secondary" type="submit">Block</button>
+                  </form>
+                  {% else %}
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="user_id" value="{{ u.user_id }}" />
+                    <input type="hidden" name="action" value="unblock" />
+                    <button class="btn sm btn-primary" type="submit">Unblock</button>
+                  </form>
+                  {% endif %}
+                  {% if not u.is_admin %}
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="user_id" value="{{ u.user_id }}" />
+                    <input type="hidden" name="action" value="make_admin" />
+                    <button class="btn sm btn-secondary" type="submit">Make admin</button>
+                  </form>
+                  {% else %}
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="user_id" value="{{ u.user_id }}" />
+                    <input type="hidden" name="action" value="revoke_admin" />
+                    <button class="btn sm btn-secondary" type="submit">Revoke admin</button>
+                  </form>
+                  {% endif %}
+                  <form method="post" style="display:inline" onsubmit="return confirm('Delete {{ u.full_name }}? This may fall back to block if transactions exist.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="user_id" value="{{ u.user_id }}" />
+                    <input type="hidden" name="action" value="delete" />
+                    <button class="btn sm btn-secondary" type="submit" style="color:#ff8989;border-color:rgba(255,111,111,.3)">Delete</button>
+                  </form>
+                </div>
+                {% else %}
+                <span class="muted-text">You</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">No users found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}

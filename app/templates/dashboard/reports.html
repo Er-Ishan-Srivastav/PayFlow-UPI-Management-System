@@ -2,7 +2,14 @@
 {% block title %}Reports · PayFlow{% endblock %}
 {% block breadcrumb %}<span>Workspace</span><b>›</b><strong>Reports</strong>{% endblock %}
 {% block content %}
-<section class="hero-row compact-head page-enter"><div><div class="eyebrow">ANALYTICS</div><h1>Reports</h1><p class="hero-sub">Understand payment activity with transaction-level aggregates and banking insights.</p></div></section>
+<section class="hero-row compact-head page-enter">
+  <div>
+    <div class="eyebrow">DATA-DRIVEN INSIGHTS</div>
+    <h1>Reports & analytics</h1>
+    <p class="hero-sub">Transaction-level aggregates, bank-wise insights and payment health — built for learning real systems.</p>
+  </div>
+</section>
+
 <section class="dashboard-grid page-enter delay-1">
   <article class="card stat-card analytics"><div class="stat-icon balance">₹</div><div class="stat-copy"><span class="eyebrow">TOTAL BALANCE</span><strong>{{ summary.total_balance | inr }}</strong><span>Across linked accounts</span></div></article>
   <article class="card stat-card analytics"><div class="stat-icon sent">↗</div><div class="stat-copy"><span class="eyebrow">OUTGOING</span><strong>{{ summary.sent_count }}</strong><span>{{ summary.sent_amount | inr }}</span></div></article>
@@ -10,8 +17,204 @@
   <article class="card stat-card analytics"><div class="stat-icon failed">!</div><div class="stat-copy"><span class="eyebrow">FAILED</span><strong>{{ summary.failed_count }}</strong><span>Requires review</span></div></article>
 </section>
 
-<section class="two-col page-enter delay-2"><article class="card chart-card"><div class="section-head"><div><span class="eyebrow">30-DAY VIEW</span><h2>Daily volume</h2></div><span class="soft-badge">MySQL analytics</span></div><div class="chart-wrap"><canvas id="repChart"></canvas></div></article><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">MONTHLY</span><h2>Transaction trend</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Month</th><th>Volume</th><th>Count</th></tr></thead><tbody>{% for m, vol, c in monthly %}<tr><td class="mono">{{ m }}</td><td>{{ vol | inr }}</td><td>{{ c }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article></section>
+<section class="chart-row page-enter delay-2">
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">30-DAY VIEW</span><h2>Daily volume</h2></div><span class="soft-badge">Success vs failed</span></div>
+    <div class="chart-wrap tall"><canvas id="repChart"></canvas></div>
+  </article>
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">OUTCOMES</span><h2>Status distribution</h2></div></div>
+    <div class="chart-wrap square"><canvas id="statusChart"></canvas></div>
+  </article>
+</section>
 
-<section class="two-col page-enter delay-3"><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">YOUR BANKS</span><h2>Balance by bank</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead><tbody>{% for b in banks %}<tr><td>{{ b.bank }}</td><td>{{ b.accounts }}</td><td>{{ b.balance | inr }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">SYSTEM-WIDE</span><h2>Bank distribution</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead><tbody>{% for b, count, balance in global_banks %}<tr><td>{{ b }}</td><td>{{ count }}</td><td>{{ balance | inr }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article></section>
+<section class="chart-row page-enter delay-2" style="margin-top:14px">
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">BANKING</span><h2>Balance by bank</h2></div></div>
+    <div class="chart-wrap square"><canvas id="bankChart"></canvas></div>
+  </article>
+  <article class="card chart-card">
+    <div class="section-head"><div><span class="eyebrow">WHEN YOU PAY</span><h2>Activity by hour</h2></div><span class="soft-badge">Success only</span></div>
+    <div class="chart-wrap square"><canvas id="hourChart"></canvas></div>
+  </article>
+</section>
+
+<section class="two-col page-enter delay-3" style="margin-top:14px">
+  <article class="card table-card mini-table">
+    <div class="section-head"><div><span class="eyebrow">MONTHLY</span><h2>Transaction trend</h2></div></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Month</th><th>Volume</th><th>Count</th></tr></thead>
+        <tbody>
+          {% for m, vol, c in monthly %}
+          <tr><td class="mono">{{ m }}</td><td>{{ vol | inr }}</td><td>{{ c }}</td></tr>
+          {% else %}
+          <tr><td colspan="3">No rows</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  <article class="card table-card mini-table">
+    <div class="section-head"><div><span class="eyebrow">TOP RECIPIENTS</span><h2>Where money goes</h2></div></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>UPI</th><th>Payments</th><th>Volume</th></tr></thead>
+        <tbody>
+          {% for cp in counterparties %}
+          <tr><td class="mono">{{ cp.upi }}</td><td>{{ cp.count }}</td><td>{{ cp.volume | inr }}</td></tr>
+          {% else %}
+          <tr><td colspan="3">No outbound payments yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="two-col page-enter" style="margin-top:14px">
+  <article class="card table-card mini-table">
+    <div class="section-head"><div><span class="eyebrow">YOUR BANKS</span><h2>Balance breakdown</h2></div></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for b in banks %}
+          <tr><td>{{ b.bank }}</td><td>{{ b.accounts }}</td><td>{{ b.balance | inr }}</td></tr>
+          {% else %}
+          <tr><td colspan="3">No rows</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  <article class="card table-card mini-table">
+    <div class="section-head"><div><span class="eyebrow">SYSTEM-WIDE</span><h2>Bank distribution</h2></div></div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for b, count, balance in global_banks %}
+          <tr><td>{{ b }}</td><td>{{ count }}</td><td>{{ balance | inr }}</td></tr>
+          {% else %}
+          <tr><td colspan="3">No rows</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
 {% endblock %}
-{% block extra_js %}<script>const series = {{ series | tojson }}; const ctx = document.getElementById('repChart'); if (ctx) { new Chart(ctx, { type: 'line', data: { labels: series.map(s => s.date.slice(5)), datasets: [{ label: 'Success', data: series.map(s => s.success), borderColor: '#41e6c4', backgroundColor: 'rgba(65,230,196,.06)', fill: true, tension: .35, borderWidth: 2 }, { label: 'Failed', data: series.map(s => s.failed), borderColor: '#ff6f6f', backgroundColor: 'rgba(255,111,111,.04)', fill: true, tension: .35, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#93a0ad', usePointStyle: true } } }, scales: { x: { ticks: { color: '#6f7b87', maxTicksLimit: 8 }, grid: { display: false } }, y: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.06)' } } } } }); }</script>{% endblock %}
+
+{% block extra_js %}
+<script>
+const series = {{ series | tojson }};
+const banks = {{ banks | tojson }};
+const statusData = {{ status_breakdown | map(attribute=0) | list | tojson }};
+const statusCounts = {{ status_breakdown | map(attribute=1) | list | tojson }};
+const hours = {{ hour_heatmap | map(attribute=0) | list | tojson }};
+const hourCounts = {{ hour_heatmap | map(attribute=1) | list | tojson }};
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#93a0ad', usePointStyle: true } } }
+};
+
+// Daily volume line
+const ctx = document.getElementById('repChart');
+if (ctx) {
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: series.map(s => (s.date || '').slice(5)),
+      datasets: [
+        { label: 'Success count', data: series.map(s => s.success), borderColor: '#41e6c4', backgroundColor: 'rgba(65,230,196,.08)', fill: true, tension: .35, borderWidth: 2 },
+        { label: 'Failed', data: series.map(s => s.failed), borderColor: '#ff6f6f', backgroundColor: 'rgba(255,111,111,.05)', fill: true, tension: .35, borderWidth: 2 }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { ticks: { color: '#6f7b87', maxTicksLimit: 10 }, grid: { display: false } },
+        y: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.06)' } }
+      }
+    }
+  });
+}
+
+// Status doughnut
+const st = document.getElementById('statusChart');
+if (st) {
+  new Chart(st, {
+    type: 'doughnut',
+    data: {
+      labels: statusData.length ? statusData : ['No data'],
+      datasets: [{
+        data: statusCounts.length ? statusCounts : [1],
+        backgroundColor: ['rgba(65,230,196,.8)', 'rgba(255,111,111,.75)', 'rgba(244,189,99,.7)', 'rgba(108,142,255,.65)'],
+        borderWidth: 0
+      }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { position: 'bottom', labels: { color: '#93a0ad', usePointStyle: true, padding: 14 } } } }
+  });
+}
+
+// Bank balances bar
+const bk = document.getElementById('bankChart');
+if (bk) {
+  new Chart(bk, {
+    type: 'bar',
+    data: {
+      labels: banks.map(b => b.bank),
+      datasets: [{
+        label: 'Balance (₹)',
+        data: banks.map(b => b.balance),
+        backgroundColor: 'rgba(65,230,196,.4)',
+        borderColor: '#41e6c4',
+        borderWidth: 1,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      scales: {
+        x: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.05)' } },
+        y: { ticks: { color: '#9aa6b2' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// Hour activity
+const hr = document.getElementById('hourChart');
+if (hr) {
+  const fullHours = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'));
+  const map = {};
+  hours.forEach((h, i) => { map[String(h).padStart(2, '0')] = hourCounts[i]; });
+  new Chart(hr, {
+    type: 'bar',
+    data: {
+      labels: fullHours,
+      datasets: [{
+        label: 'Payments',
+        data: fullHours.map(h => map[h] || 0),
+        backgroundColor: 'rgba(108,142,255,.45)',
+        borderColor: '#8ca7ff',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#6f7b87', maxTicksLimit: 12 }, grid: { display: false } },
+        y: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.05)' } }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
