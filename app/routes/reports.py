@@ -19,9 +19,16 @@ def index():
 
     monthly = []
     if pks:
+        # MySQL: date_format; SQLite: strftime – dialect-safe
+        bind = db.session.get_bind()
+        dialect = bind.dialect.name if bind is not None else "mysql"
+        if dialect == "sqlite":
+            month_expr = func.strftime("%Y-%m", Transaction.timestamp)
+        else:
+            month_expr = func.date_format(Transaction.timestamp, "%Y-%m")
         monthly = (
             db.session.query(
-                func.strftime("%Y-%m", Transaction.timestamp).label("m"),
+                month_expr.label("m"),
                 func.sum(case((Transaction.status == "SUCCESS", Transaction.amount), else_=0)),
                 func.count(Transaction.txn_id),
             )

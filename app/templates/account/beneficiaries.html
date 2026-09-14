@@ -1,35 +1,14 @@
 {% extends "base.html" %}
 {% block title %}People · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Manage</span><b>›</b><strong>People</strong>{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Saved people</h1></div>
-<div class="grid grid-2">
-  <div class="list">
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">SAVED CONTACTS</div><h1>People</h1><p class="hero-sub">Keep frequently used UPI identities one tap away.</p></div></section>
+<div class="accounts-layout page-enter delay-1">
+  <div class="people-list">
     {% for b in items %}
-    <div class="row-card">
-      <div>
-        <div>{{ b.ben_name }}</div>
-        <div class="mono muted">{{ b.ben_upi }}</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <a class="btn sm" href="{{ url_for('transaction.send', to=b.ben_upi) }}">Pay</a>
-        <form method="post" action="{{ url_for('beneficiary.delete', ben_id=b.ben_id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button class="btn ghost sm" type="submit">Remove</button>
-        </form>
-      </div>
-    </div>
-    {% else %}
-    <div class="card"><p>No beneficiaries yet.</p></div>
-    {% endfor %}
+    <article class="card person-card"><div class="avatar large">{{ b.ben_name[:1]|upper }}</div><div class="person-copy"><strong>{{ b.ben_name }}</strong><span class="mono">{{ b.ben_upi }}</span></div><div class="person-actions"><a class="btn btn-primary sm" href="{{ url_for('transaction.send', to=b.ben_upi) }}">Pay</a><form method="post" action="{{ url_for('beneficiary.delete', ben_id=b.ben_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary sm" type="submit">Remove</button></form></div></article>
+    {% else %}<article class="card empty-state large"><div class="empty-icon">◎</div><strong>No saved people</strong><span>Add a beneficiary to speed up repeat payments.</span></article>{% endfor %}
   </div>
-  <div class="card">
-    <h3>Add beneficiary</h3>
-    <form method="post">
-      {{ form.hidden_tag() }}
-      {{ form.ben_name.label }}{{ form.ben_name() }}
-      {{ form.ben_upi.label }}{{ form.ben_upi(placeholder="amit@icici") }}
-      {{ form.submit(class="btn full") }}
-    </form>
-  </div>
+  <article class="card form-card"><div class="section-head"><div><span class="eyebrow">NEW CONTACT</span><h2>Add person</h2></div></div><form method="post" class="smart-form">{{ form.hidden_tag() }}<div class="field-block"><label>{{ form.ben_name.label.text }}</label>{{ form.ben_name(placeholder="Priya") }}</div><div class="field-block"><label>{{ form.ben_upi.label.text }}</label>{{ form.ben_upi(placeholder="priya@hdfc") }}</div><button class="btn btn-primary full" type="submit">Save beneficiary</button></form></article>
 </div>
 {% endblock %}

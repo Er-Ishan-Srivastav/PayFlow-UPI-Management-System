@@ -2,45 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#090b0e" />
   <title>{% block title %}PayFlow{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body class="{% if current_user.is_authenticated %}app-body{% else %}auth-body{% endif %}">
   {% if current_user.is_authenticated %}
-  <aside class="rail">
-    <a class="brand" href="{{ url_for('dashboard.index') }}">PayFlow</a>
-    <nav>
-      <a href="{{ url_for('dashboard.index') }}" class="{% if request.endpoint == 'dashboard.index' %}on{% endif %}">Overview</a>
-      <a href="{{ url_for('transaction.send') }}" class="{% if request.endpoint == 'transaction.send' %}on{% endif %}">Send</a>
-      <a href="{{ url_for('transaction.history') }}" class="{% if request.endpoint == 'transaction.history' %}on{% endif %}">History</a>
-      <a href="{{ url_for('account.banks') }}" class="{% if request.endpoint == 'account.banks' %}on{% endif %}">Banks</a>
-      <a href="{{ url_for('account.manage_upi') }}" class="{% if request.endpoint == 'account.manage_upi' %}on{% endif %}">UPI IDs</a>
-      <a href="{{ url_for('beneficiary.index') }}" class="{% if request.endpoint == 'beneficiary.index' %}on{% endif %}">People</a>
-      <a href="{{ url_for('reports.index') }}" class="{% if request.endpoint == 'reports.index' %}on{% endif %}">Reports</a>
-    </nav>
-    <div class="rail-foot">
-      <div class="who">{{ current_user.full_name }}</div>
-      <a class="muted" href="{{ url_for('auth.logout') }}">Sign out</a>
-    </div>
-  </aside>
+  <div class="app-frame">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <a class="brand" href="{{ url_for('dashboard.index') }}">
+          <span class="brand-mark">P</span>
+          <span class="brand-word">Pay<span>Flow</span></span>
+        </a>
+        <button class="mobile-close" type="button" data-sidebar-close aria-label="Close navigation">×</button>
+      </div>
+
+      <div class="profile-mini">
+        <div class="avatar">{{ current_user.full_name[:1]|upper }}</div>
+        <div class="profile-mini-copy">
+          <strong>{{ current_user.full_name }}</strong>
+          <span>{{ current_user.email }}</span>
+        </div>
+      </div>
+
+      <nav class="nav-section" aria-label="Main navigation">
+        <div class="nav-label">Workspace</div>
+        <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+          <span class="nav-icon">⌂</span><span>Overview</span>
+        </a>
+        <a href="{{ url_for('transaction.send') }}" class="nav-item {% if request.endpoint == 'transaction.send' %}active{% endif %}">
+          <span class="nav-icon">↗</span><span>Send money</span>
+        </a>
+        <a href="{{ url_for('transaction.history') }}" class="nav-item {% if request.endpoint == 'transaction.history' %}active{% endif %}">
+          <span class="nav-icon">◷</span><span>History</span>
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint == 'reports.index' %}active{% endif %}">
+          <span class="nav-icon">▥</span><span>Reports</span>
+        </a>
+
+        <div class="nav-label nav-label-spaced">Manage</div>
+        <a href="{{ url_for('account.banks') }}" class="nav-item {% if request.endpoint == 'account.banks' %}active{% endif %}">
+          <span class="nav-icon">▣</span><span>Bank accounts</span>
+        </a>
+        <a href="{{ url_for('account.manage_upi') }}" class="nav-item {% if request.endpoint == 'account.manage_upi' %}active{% endif %}">
+          <span class="nav-icon">@</span><span>UPI IDs</span>
+        </a>
+        <a href="{{ url_for('beneficiary.index') }}" class="nav-item {% if request.endpoint == 'beneficiary.index' %}active{% endif %}">
+          <span class="nav-icon">◎</span><span>People</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="security-chip"><span class="pulse-dot"></span> Secure session</div>
+        <a class="signout" href="{{ url_for('auth.logout') }}"><span>↪</span> Sign out</a>
+      </div>
+    </aside>
+
+    <div class="mobile-backdrop" data-sidebar-close></div>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <button class="mobile-menu" type="button" data-sidebar-open aria-label="Open navigation">☰</button>
+        <div class="crumb">{% block breadcrumb %}<span>PayFlow</span>{% endblock %}</div>
+        <div class="topbar-actions">
+          <span class="live-pill"><span></span> System online</span>
+          <div class="top-avatar">{{ current_user.full_name[:1]|upper }}</div>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+  {% else %}
+    <div class="auth-page-wrap">
   {% endif %}
 
-  <main class="shell {% if not current_user.is_authenticated %}auth{% endif %}">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flashes">
-          {% for cat, msg in messages %}
-            <div class="flash {{ cat }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="{% if current_user.is_authenticated %}flash-stack{% else %}auth-flashes{% endif %}">
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">
+        <span class="flash-dot"></span>
+        <span>{{ message }}</span>
+        <button type="button" class="flash-close" data-dismiss-flash>×</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  </div>
+  {% if current_user.is_authenticated %}
+    </main>
+  </div>
+  {% endif %}
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block extra_js %}{% endblock %}

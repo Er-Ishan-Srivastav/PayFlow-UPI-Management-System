@@ -1,32 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Send · PayFlow{% endblock %}
+{% block title %}Send money · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Workspace</span><b>›</b><strong>Send money</strong>{% endblock %}
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>Send money</h1>
-    <p>From {{ primary.upi_address if primary else "no primary UPI" }}</p>
-  </div>
-</div>
-<div class="grid grid-2">
-  <div class="card">
+<section class="hero-row compact-head page-enter">
+  <div><div class="eyebrow">PAYMENT WORKFLOW</div><h1>Send money</h1><p class="hero-sub">Move simulated funds between registered PayFlow UPI identities.</p></div>
+</section>
+
+<div class="send-layout page-enter delay-1">
+  <article class="card send-card">
     {% if not primary %}
-      <p>Create a primary UPI ID before paying.</p>
-      <a class="btn" href="{{ url_for('account.manage_upi') }}">Create UPI ID</a>
+    <div class="empty-state large"><div class="empty-icon">@</div><strong>Create a primary UPI ID first</strong><span>Link a bank account, then create your UPI identity before making a payment.</span><a class="btn btn-primary" href="{{ url_for('account.manage_upi') }}">Set up UPI</a></div>
     {% else %}
-    <form method="post">
+    <div class="payment-summary-bar"><div><span class="eyebrow">PAYING FROM</span><strong class="mono">{{ primary.upi_address }}</strong></div><div class="summary-chip">Primary</div></div>
+    <form method="post" class="smart-form" novalidate>
       {{ form.hidden_tag() }}
-      {{ form.receiver_upi.label }}{{ form.receiver_upi(placeholder="priya@hdfc") }}
-      {{ form.amount.label }}{{ form.amount(placeholder="500.00") }}
-      {{ form.remarks.label }}{{ form.remarks() }}
-      {{ form.pin.label }}{{ form.pin(placeholder="1234") }}
-      {{ form.submit(class="btn full") }}
+      <div class="field-block"><label for="receiver_upi">{{ form.receiver_upi.label.text }}</label>{{ form.receiver_upi(placeholder="name@bank", autocomplete="off") }}{% for e in form.receiver_upi.errors %}<div class="field-error">{{ e }}</div>{% endfor %}</div>
+      <div class="amount-wrap"><span class="currency">₹</span>{{ form.amount(placeholder="0.00", inputmode="decimal") }}</div>
+      {% for e in form.amount.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      <div class="form-grid"><div class="field-block"><label for="remarks">{{ form.remarks.label.text }}</label>{{ form.remarks(placeholder="What's this payment for?") }}</div><div class="field-block"><label for="pin">{{ form.pin.label.text }}</label>{{ form.pin(placeholder="••••", inputmode="numeric", autocomplete="off") }}</div></div>
+      {% for e in form.pin.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+      <button class="btn btn-primary btn-xl full" type="submit" data-loading="Processing payment…"><span>↗</span> Pay now</button>
     </form>
     {% endif %}
-  </div>
-  <div class="card">
-    <h3>How it settles</h3>
-    <p>The transfer runs in a single database transaction: lock both accounts, debit, credit, write the ledger row, then commit. Any failure rolls the whole unit back.</p>
-    <p>Demo PIN is <span class="mono">1234</span>.</p>
-  </div>
+  </article>
+
+  <aside class="send-side">
+    <article class="card info-card">
+      <span class="eyebrow">HOW IT SETTLES</span><h3>One atomic transfer.</h3>
+      <div class="settlement-flow"><div>Validate</div><span>→</span><div>Lock</div><span>→</span><div>Debit / credit</div><span>→</span><div>Commit</div></div>
+      <p>The transfer is processed as a single database transaction. On failure, the whole unit rolls back.</p>
+    </article>
+    <article class="card info-card subtle-card"><span class="eyebrow">SAFETY CHECK</span><h3>Before you pay</h3><ul class="check-list"><li>Receiver UPI must exist</li><li>PIN must be valid</li><li>Sender balance must be sufficient</li><li>Fraud controls may block unusual activity</li></ul></article>
+  </aside>
 </div>
 {% endblock %}

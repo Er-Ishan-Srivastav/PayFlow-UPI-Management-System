@@ -1,48 +1,33 @@
 {% extends "base.html" %}
 {% block title %}History · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Workspace</span><b>›</b><strong>History</strong>{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h1>History</h1>
-  <form class="filters" method="get">
-    {{ form.q(placeholder="Search remarks / ref") }}
-    {{ form.status() }}
-    {{ form.direction() }}
-    <button class="btn sm" type="submit">Filter</button>
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">LEDGER</div><h1>Transaction history</h1><p class="hero-sub">Search, filter and inspect every payment associated with your UPI identities.</p></div></section>
+
+<article class="card page-enter delay-1">
+  <form class="filter-bar" method="get">
+    <div class="search-box"><span>⌕</span>{{ form.q(placeholder="Search reference or remarks") }}</div>
+    <div class="filter-control">{{ form.status() }}</div>
+    <div class="filter-control">{{ form.direction() }}</div>
+    <button class="btn btn-secondary" type="submit">Filter</button>
   </form>
-</div>
-<div class="card">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>When</th>
-        <th>Ref</th>
-        <th>Counterparty</th>
-        <th>Amount</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
+</article>
+
+<article class="card table-card page-enter delay-2">
+  <div class="table-head"><div><span class="eyebrow">PAYMENT LEDGER</span><h2>{{ pagination.total }} transaction{{ '' if pagination.total == 1 else 's' }}</h2></div></div>
+  <div class="table-scroll"><table class="data-table"><thead><tr><th>When</th><th>Reference</th><th>Counterparty</th><th>Direction</th><th>Amount</th><th>Status</th></tr></thead><tbody>
     {% for t in txns %}
       {% set sent = t.sender_upi in my_pks %}
       <tr>
-        <td>{{ t.timestamp.strftime('%d %b %Y %H:%M') }}</td>
-        <td class="mono">{{ t.reference_id }}</td>
-        <td class="mono">{{ upi_map.get(t.receiver_upi if sent else t.sender_upi, '—') }}</td>
-        <td class="mono">{{ '−' if sent else '+' }}{{ t.amount | inr }}</td>
-        <td><span class="badge {% if t.status == 'SUCCESS' %}ok{% else %}bad{% endif %}">{{ t.status }}</span></td>
+        <td><span class="date-primary">{{ t.timestamp.strftime('%d %b %Y') }}</span><span class="date-secondary">{{ t.timestamp.strftime('%H:%M') }}</span></td>
+        <td class="mono muted-text">{{ t.reference_id }}</td>
+        <td><span class="mono">{{ upi_map.get(t.receiver_upi if sent else t.sender_upi, '—') }}</span></td>
+        <td><span class="direction-tag {% if sent %}out{% else %}in{% endif %}">{{ 'Sent' if sent else 'Received' }}</span></td>
+        <td class="amount-cell {% if sent %}out{% else %}in{% endif %}">{{ '−' if sent else '+' }}{{ t.amount | inr }}</td>
+        <td><span class="status-pill {% if t.status == 'SUCCESS' %}success{% elif t.status == 'FAILED' %}danger{% else %}warning{% endif %}">{{ t.status }}</span></td>
       </tr>
-    {% else %}
-      <tr><td colspan="5">No payments match.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <div class="pager">
-    {% if pagination.has_prev %}
-      <a class="btn ghost sm" href="{{ url_for('transaction.history', page=pagination.prev_num, **request.args) }}">Previous</a>
-    {% endif %}
-    {% if pagination.has_next %}
-      <a class="btn ghost sm" href="{{ url_for('transaction.history', page=pagination.next_num, **request.args) }}">Next</a>
-    {% endif %}
-  </div>
-</div>
+    {% else %}<tr><td colspan="6"><div class="empty-state compact"><div class="empty-icon">◷</div><div><strong>No payments match your filters</strong><span>Try clearing one of the filters and searching again.</span></div></div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if pagination.pages > 1 %}<div class="pager"><span>Page {{ pagination.page }} of {{ pagination.pages }}</span><div class="pager-actions">{% if pagination.has_prev %}<a class="btn btn-secondary sm" href="{{ url_for('transaction.history', page=pagination.prev_num) }}">← Previous</a>{% endif %}{% if pagination.has_next %}<a class="btn btn-secondary sm" href="{{ url_for('transaction.history', page=pagination.next_num) }}">Next →</a>{% endif %}</div></div>{% endif %}
+</article>
 {% endblock %}

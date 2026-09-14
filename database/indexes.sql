@@ -28,3 +28,7 @@ CREATE INDEX idx_txn_status ON transactions(status);
 
 -- Fast account number lookup
 CREATE INDEX idx_account_no ON bank_accounts(account_no);
+
+-- Account status / lock checks
+CREATE INDEX idx_account_status ON bank_accounts(status);
+CREATE INDEX idx_account_user ON bank_accounts(user_id);

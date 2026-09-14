@@ -1,24 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Balance · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Manage</span><b>›</b><strong>Balance</strong>{% endblock %}
 {% block content %}
-<h2 class="mb-4">Your Bank Accounts</h2>
-<div class="row g-3">
-    {% for acc in accounts %}
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ acc.bank_name }}</h5>
-                <p class="mb-1"><strong>A/C:</strong> ****{{ acc.account_number[-4:] }}</p>
-                <p class="mb-1"><strong>IFSC:</strong> {{ acc.ifsc_code }}</p>
-                <h3 class="text-success">₹{{ "%.2f"|format(acc.balance) }}</h3>
-                {% if acc.is_primary %}<span class="badge bg-primary">Primary</span>{% endif %}
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="col-12">
-        <div class="alert alert-info">No bank accounts linked yet. <a href="{{ url_for('account.link_bank') }}">Link one now</a>.</div>
-    </div>
-    {% endfor %}
-</div>
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">ACCOUNT BALANCES</div><h1>Your balances</h1><p class="hero-sub">Current balances across linked simulated bank accounts.</p></div></section>
+<div class="account-grid page-enter delay-1">{% for acc in accounts %}<article class="card bank-card"><div class="bank-card-top"><div class="bank-logo">{{ acc.bank_name[:1] }}</div><span class="soft-badge">{{ acc.account_type }}</span></div><div class="bank-name">{{ acc.bank_name }}</div><div class="bank-number mono">{{ acc.masked_account() }}</div><div class="bank-card-bottom"><div><span class="eyebrow">BALANCE</span><strong>{{ acc.balance | inr }}</strong></div><div class="ifsc mono">{{ acc.ifsc_code }}</div></div></article>{% else %}<article class="card empty-state large"><div class="empty-icon">₹</div><strong>No linked accounts</strong><span>Add a bank account to see your balance.</span><a class="btn btn-primary" href="{{ url_for('account.banks') }}">Link bank</a></article>{% endfor %}</div>
 {% endblock %}

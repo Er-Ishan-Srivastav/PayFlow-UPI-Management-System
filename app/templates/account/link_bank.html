@@ -1,22 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Link Bank · PayFlow{% endblock %}
+{% block title %}Link bank · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Manage</span><b>›</b><strong>Link bank</strong>{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <h3 class="mb-4">Link Bank Account</h3>
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">{{ form.bank_name.label(class="form-label") }}{{ form.bank_name(class="form-control") }}</div>
-                    <div class="mb-3">{{ form.account_number.label(class="form-label") }}{{ form.account_number(class="form-control") }}</div>
-                    <div class="mb-3">{{ form.ifsc_code.label(class="form-label") }}{{ form.ifsc_code(class="form-control") }}</div>
-                    <div class="mb-3">{{ form.account_type.label(class="form-label") }}{{ form.account_type(class="form-select") }}</div>
-                    <div class="mb-3 form-check">{{ form.is_primary(class="form-check-input") }}{{ form.is_primary.label(class="form-check-label") }}</div>
-                    <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">BANKING CONNECTION</div><h1>Link a bank account</h1><p class="hero-sub">Connect another simulated bank account to your PayFlow profile.</p></div></section>
+<article class="card form-card narrow page-enter delay-1"><form method="post" class="smart-form">{{ form.hidden_tag() }}<div class="field-block"><label>{{ form.bank_name.label.text }}</label>{{ form.bank_name() }}</div><div class="field-block"><label>{{ form.account_number.label.text }}</label>{{ form.account_number() }}</div><div class="field-block"><label>{{ form.ifsc_code.label.text }}</label>{{ form.ifsc_code() }}</div><div class="field-block"><label>{{ form.account_type.label.text }}</label>{{ form.account_type() }}</div><label class="toggle-row">{{ form.is_primary() }}<span>Set as primary</span></label><button class="btn btn-primary full" type="submit">Link account</button></form></article>
 {% endblock %}

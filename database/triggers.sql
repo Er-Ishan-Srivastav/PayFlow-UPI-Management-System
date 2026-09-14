@@ -6,7 +6,7 @@
 USE upi_db;
 
 -- ------------------------------------------
--- TRIGGER 1: Auto-log every new transaction
+-- TRIGGER 1: Auto-log every new transaction (authoritative CREATED)
 -- ------------------------------------------
 DELIMITER //
 
@@ -61,6 +61,7 @@ DELIMITER ;
 
 -- ------------------------------------------
 -- TRIGGER 4: Log when beneficiary is added
+-- Uses NULL txn_id (nullable FK) – no placeholder 0
 -- ------------------------------------------
 DELIMITER //
 
@@ -69,8 +70,7 @@ AFTER INSERT ON beneficiaries
 FOR EACH ROW
 BEGIN
     INSERT INTO transaction_logs (txn_id, action, old_status, new_status)
-    VALUES (0, 'BENEFICIARY_ADDED', NULL, NEW.ben_upi);
-    -- txn_id = 0 is a placeholder for non-transaction logs
+    VALUES (NULL, 'BENEFICIARY_ADDED', NULL, NEW.ben_upi);
 END //
 
 DELIMITER ;

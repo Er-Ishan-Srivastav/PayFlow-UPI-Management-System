@@ -1,33 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Banks · PayFlow{% endblock %}
+{% block title %}Bank accounts · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Manage</span><b>›</b><strong>Bank accounts</strong>{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h1>Bank accounts</h1>
-</div>
-<div class="grid grid-2">
-  <div>
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">BANKING CONNECTIONS</div><h1>Bank accounts</h1><p class="hero-sub">Manage the simulated accounts available to your PayFlow profile.</p></div><a class="btn btn-primary" href="#link-bank">＋ Link account</a></section>
+
+<div class="accounts-layout page-enter delay-1">
+  <div class="account-grid">
     {% for acc in accounts %}
-    <div class="card">
-      <div class="label">{{ acc.bank_name }}</div>
-      <div class="value mono" style="font-size:1.4rem">{{ acc.balance | inr }}</div>
-      <p>{{ acc.masked_account() }} · {{ acc.ifsc_code }} · {{ acc.account_type }}</p>
-    </div>
-    {% else %}
-    <div class="card"><p>No banks linked yet.</p></div>
-    {% endfor %}
+    <article class="card bank-card">
+      <div class="bank-card-top"><div class="bank-logo">{{ acc.bank_name[:1] }}</div><span class="soft-badge">{{ acc.account_type }}</span></div>
+      <div class="bank-name">{{ acc.bank_name }}</div><div class="bank-number mono">{{ acc.masked_account() }}</div>
+      <div class="bank-card-bottom"><div><span class="eyebrow">AVAILABLE BALANCE</span><strong>{{ acc.balance | inr }}</strong></div><div class="ifsc mono">{{ acc.ifsc_code }}</div></div>
+    </article>
+    {% else %}<article class="card empty-state large"><div class="empty-icon">▣</div><strong>No bank accounts yet</strong><span>Link your first simulated bank account to get started.</span></article>{% endfor %}
   </div>
-  <div class="card">
-    <h3>Link a bank</h3>
-    <p>Maximum three accounts per user (stored procedure rule).</p>
-    <form method="post">
-      {{ form.hidden_tag() }}
-      {{ form.bank_name.label }}{{ form.bank_name() }}
-      {{ form.account_no.label }}{{ form.account_no() }}
-      {{ form.ifsc_code.label }}{{ form.ifsc_code(placeholder="HDFC0001234") }}
-      {{ form.account_type.label }}{{ form.account_type() }}
-      {{ form.opening_balance.label }}{{ form.opening_balance() }}
-      {{ form.submit(class="btn full") }}
+
+  <article class="card form-card" id="link-bank"><div class="section-head"><div><span class="eyebrow">NEW CONNECTION</span><h2>Link a bank</h2></div><span class="soft-badge">Up to 3 accounts</span></div>
+    <form method="post" class="smart-form">{{ form.hidden_tag() }}
+      <div class="field-block"><label>{{ form.bank_name.label.text }}</label>{{ form.bank_name() }}</div>
+      <div class="field-block"><label>{{ form.account_no.label.text }}</label>{{ form.account_no(placeholder="123456789012") }}</div>
+      <div class="field-block"><label>{{ form.ifsc_code.label.text }}</label>{{ form.ifsc_code(placeholder="HDFC0001234") }}</div>
+      <div class="form-grid"><div class="field-block"><label>{{ form.account_type.label.text }}</label>{{ form.account_type() }}</div><div class="field-block"><label>{{ form.opening_balance.label.text }}</label>{{ form.opening_balance(placeholder="10000.00") }}</div></div>
+      <button class="btn btn-primary full" type="submit">Link account</button>
     </form>
-  </div>
+  </article>
 </div>
 {% endblock %}

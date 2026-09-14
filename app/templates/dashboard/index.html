@@ -1,83 +1,114 @@
 {% extends "base.html" %}
 {% block title %}Overview · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Workspace</span><b>›</b><strong>Overview</strong>{% endblock %}
 {% block content %}
-<div class="page-head">
+<section class="hero-row page-enter">
   <div>
-    <h1>{{ current_user.full_name.split()[0] }}</h1>
-    <p>{{ summary.primary_upi or "No primary UPI yet" }}</p>
+    <div class="eyebrow">PERSONAL FINANCE CONTROL CENTER</div>
+    <h1>Good to see you, {{ current_user.full_name.split()[0] }}.</h1>
+    <p class="hero-sub">Your simulated UPI activity, balances and payment health — all in one place.</p>
   </div>
-  <a class="btn" href="{{ url_for('transaction.send') }}">Send money</a>
-</div>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="{{ url_for('transaction.send') }}"><span>↗</span> Send money</a>
+    <a class="btn btn-secondary" href="{{ url_for('account.banks') }}"><span>＋</span> Add bank</a>
+  </div>
+</section>
 
-<div class="grid grid-3">
-  <div class="card stat">
-    <div class="label">Total balance</div>
-    <div class="value">{{ summary.total_balance | inr }}</div>
-    <div class="hint">Across linked accounts</div>
-  </div>
-  <div class="card stat">
-    <div class="label">Sent</div>
-    <div class="value">{{ summary.sent_amount | inr }}</div>
-    <div class="hint">{{ summary.sent_count }} payments</div>
-  </div>
-  <div class="card stat">
-    <div class="label">Received</div>
-    <div class="value">{{ summary.received_amount | inr }}</div>
-    <div class="hint">{{ summary.received_count }} credits</div>
-  </div>
-</div>
+<section class="dashboard-grid hero-metrics page-enter delay-1">
+  <article class="card balance-card accent-card">
+    <div class="card-topline">
+      <span class="eyebrow">TOTAL BALANCE</span>
+      <span class="soft-badge">Across all accounts</span>
+    </div>
+    <div class="balance-number">{{ summary.total_balance | inr }}</div>
+    <div class="balance-footer">
+      <span class="mono">{{ summary.primary_upi or 'No primary UPI' }}</span>
+      <span class="balance-state"><span class="pulse-dot"></span> Available</span>
+    </div>
+    <div class="glow-orb orb-a"></div><div class="glow-orb orb-b"></div>
+  </article>
 
-<div class="grid grid-2" style="margin-top:24px">
-  <div class="card">
-    <h3>Volume</h3>
-    <canvas id="volChart" height="140"></canvas>
-  </div>
-  <div class="card">
-    <h3>Recent activity</h3>
-    {% if recent %}
-    <table class="table">
-      <tbody>
+  <article class="card stat-card">
+    <div class="stat-icon sent">↗</div>
+    <div class="stat-copy"><span class="eyebrow">SENT</span><strong>{{ summary.sent_amount | inr }}</strong><span>{{ summary.sent_count }} payments</span></div>
+  </article>
+  <article class="card stat-card">
+    <div class="stat-icon received">↙</div>
+    <div class="stat-copy"><span class="eyebrow">RECEIVED</span><strong>{{ summary.received_amount | inr }}</strong><span>{{ summary.received_count }} credits</span></div>
+  </article>
+  <article class="card stat-card">
+    <div class="stat-icon failed">!</div>
+    <div class="stat-copy"><span class="eyebrow">FAILED</span><strong>{{ summary.failed_count }}</strong><span>Transactions needing attention</span></div>
+  </article>
+</section>
+
+<section class="two-col page-enter delay-2">
+  <article class="card chart-card">
+    <div class="section-head">
+      <div><span class="eyebrow">ACTIVITY</span><h2>Payment volume</h2></div>
+      <a class="text-link" href="{{ url_for('reports.index') }}">Open reports →</a>
+    </div>
+    <div class="chart-wrap"><canvas id="volChart"></canvas></div>
+  </article>
+
+  <article class="card activity-card">
+    <div class="section-head"><div><span class="eyebrow">LATEST</span><h2>Recent activity</h2></div><a class="text-link" href="{{ url_for('transaction.history') }}">View all →</a></div>
+    <div class="activity-list">
       {% for t in recent %}
-        {% set mine = t.sender_upi_rel.user_id == current_user.user_id if t.sender_upi_rel else false %}
-        <tr>
-          <td>
-            <div class="mono">{{ t.amount | inr }}</div>
-            <div class="muted">{{ t.remarks or t.reference_id }}</div>
-          </td>
-          <td class="mono">{{ t.timestamp.strftime('%d %b') }}</td>
-          <td><span class="badge {% if t.status == 'SUCCESS' %}ok{% else %}bad{% endif %}">{{ t.status }}</span></td>
-        </tr>
+      {% set sent = t.sender_upi_rel.user_id == current_user.user_id if t.sender_upi_rel else false %}
+      <div class="activity-row">
+        <div class="activity-avatar {% if t.status == 'SUCCESS' %}success{% else %}danger{% endif %}">{{ '↗' if sent else '↙' }}</div>
+        <div class="activity-main"><strong>{{ t.remarks or ('Payment ' ~ t.reference_id) }}</strong><span class="mono">{{ t.timestamp.strftime('%d %b %Y, %H:%M') }}</span></div>
+        <div class="activity-amount"><strong>{{ ('−' if sent else '+') }}{{ t.amount | inr }}</strong><span class="status-pill {% if t.status == 'SUCCESS' %}success{% else %}danger{% endif %}">{{ t.status }}</span></div>
+      </div>
+      {% else %}
+      <div class="empty-state compact"><div class="empty-icon">◷</div><div><strong>No transactions yet</strong><span>Your latest activity will appear here.</span></div></div>
       {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p>No transactions yet.</p>
-    {% endif %}
-  </div>
-</div>
+    </div>
+  </article>
+</section>
+
+<section class="two-col page-enter delay-3">
+  <article class="card list-card">
+    <div class="section-head"><div><span class="eyebrow">BANKING</span><h2>Linked accounts</h2></div><a class="icon-link" href="{{ url_for('account.banks') }}">＋</a></div>
+    <div class="account-list">
+      {% for acc in accounts %}
+      <div class="account-row">
+        <div class="bank-avatar">{{ acc.bank_name[:1] }}</div>
+        <div class="account-main"><strong>{{ acc.bank_name }}</strong><span class="mono">{{ acc.masked_account() }} · {{ acc.ifsc_code }}</span></div>
+        <div class="account-balance"><strong>{{ acc.balance | inr }}</strong><span>{{ acc.account_type }}</span></div>
+      </div>
+      {% else %}
+      <div class="empty-state compact"><div class="empty-icon">▣</div><div><strong>No bank accounts</strong><span>Link an account to start using PayFlow.</span></div></div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card list-card">
+    <div class="section-head"><div><span class="eyebrow">IDENTITY</span><h2>UPI identities</h2></div><a class="icon-link" href="{{ url_for('account.manage_upi') }}">＋</a></div>
+    <div class="upi-stack">
+      {% for u in upis %}
+      <div class="upi-row">
+        <div class="upi-symbol">@</div>
+        <div class="upi-main"><strong class="mono">{{ u.upi_address }}</strong><span>{{ u.bank_account.bank_name if u.bank_account else 'Linked account' }}</span></div>
+        {% if u.is_primary %}<span class="status-pill success">Primary</span>{% else %}<span class="status-pill neutral">Secondary</span>{% endif %}
+      </div>
+      {% else %}
+      <div class="empty-state compact"><div class="empty-icon">@</div><div><strong>No UPI IDs</strong><span>Create one after linking a bank account.</span></div></div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
 {% endblock %}
 {% block extra_js %}
 <script>
 const series = {{ series | tojson }};
 const ctx = document.getElementById('volChart');
-if (ctx && series.length) {
+if (ctx) {
   new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: series.map(s => s.date.slice(5)),
-      datasets: [{
-        label: 'Volume',
-        data: series.map(s => s.volume),
-        backgroundColor: '#c5cdd8'
-      }]
-    },
-    options: {
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#9a9a93' }, grid: { display: false } },
-        y: { ticks: { color: '#9a9a93' }, grid: { color: 'rgba(255,255,255,.06)' } }
-      }
-    }
+    type: 'line',
+    data: { labels: series.map(s => s.date.slice(5)), datasets: [{ label: 'Volume', data: series.map(s => s.volume), fill: true, tension: 0.35, borderWidth: 2, pointRadius: 2, backgroundColor: 'rgba(65, 230, 196, .08)', borderColor: '#41e6c4', pointBackgroundColor: '#41e6c4' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6f7b87', maxTicksLimit: 7 }, grid: { display: false } }, y: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.06)' } } } }
   });
 }
 </script>

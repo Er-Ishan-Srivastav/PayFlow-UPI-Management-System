@@ -1,81 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Reports · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Workspace</span><b>›</b><strong>Reports</strong>{% endblock %}
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>Reports</h1>
-    <p>Aggregations over your ledger — the same ideas as the SQL views.</p>
-  </div>
-</div>
-<div class="grid grid-3">
-  <div class="card stat">
-    <div class="label">Balance</div>
-    <div class="value">{{ summary.total_balance | inr }}</div>
-  </div>
-  <div class="card stat">
-    <div class="label">Successful out</div>
-    <div class="value">{{ summary.sent_count }}</div>
-  </div>
-  <div class="card stat">
-    <div class="label">Failed</div>
-    <div class="value">{{ summary.failed_count }}</div>
-  </div>
-</div>
-<div class="card" style="margin-top:24px">
-  <h3>Daily volume</h3>
-  <canvas id="repChart" height="120"></canvas>
-</div>
-<div class="grid grid-2" style="margin-top:24px">
-  <div class="card">
-    <h3>Your banks</h3>
-    <table class="table">
-      <thead><tr><th>Bank</th><th>Accounts</th><th>Deposits</th></tr></thead>
-      <tbody>
-      {% for b in banks %}
-        <tr><td>{{ b.bank }}</td><td>{{ b.accounts }}</td><td class="mono">{{ b.balance | inr }}</td></tr>
-      {% else %}
-        <tr><td colspan="3">None</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="card">
-    <h3>Monthly</h3>
-    <table class="table">
-      <thead><tr><th>Month</th><th>Volume</th><th>Count</th></tr></thead>
-      <tbody>
-      {% for m, vol, c in monthly %}
-        <tr><td class="mono">{{ m }}</td><td class="mono">{{ vol | inr }}</td><td>{{ c }}</td></tr>
-      {% else %}
-        <tr><td colspan="3">No rows</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">ANALYTICS</div><h1>Reports</h1><p class="hero-sub">Understand payment activity with transaction-level aggregates and banking insights.</p></div></section>
+<section class="dashboard-grid page-enter delay-1">
+  <article class="card stat-card analytics"><div class="stat-icon balance">₹</div><div class="stat-copy"><span class="eyebrow">TOTAL BALANCE</span><strong>{{ summary.total_balance | inr }}</strong><span>Across linked accounts</span></div></article>
+  <article class="card stat-card analytics"><div class="stat-icon sent">↗</div><div class="stat-copy"><span class="eyebrow">OUTGOING</span><strong>{{ summary.sent_count }}</strong><span>{{ summary.sent_amount | inr }}</span></div></article>
+  <article class="card stat-card analytics"><div class="stat-icon received">↙</div><div class="stat-copy"><span class="eyebrow">INCOMING</span><strong>{{ summary.received_count }}</strong><span>{{ summary.received_amount | inr }}</span></div></article>
+  <article class="card stat-card analytics"><div class="stat-icon failed">!</div><div class="stat-copy"><span class="eyebrow">FAILED</span><strong>{{ summary.failed_count }}</strong><span>Requires review</span></div></article>
+</section>
+
+<section class="two-col page-enter delay-2"><article class="card chart-card"><div class="section-head"><div><span class="eyebrow">30-DAY VIEW</span><h2>Daily volume</h2></div><span class="soft-badge">MySQL analytics</span></div><div class="chart-wrap"><canvas id="repChart"></canvas></div></article><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">MONTHLY</span><h2>Transaction trend</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Month</th><th>Volume</th><th>Count</th></tr></thead><tbody>{% for m, vol, c in monthly %}<tr><td class="mono">{{ m }}</td><td>{{ vol | inr }}</td><td>{{ c }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article></section>
+
+<section class="two-col page-enter delay-3"><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">YOUR BANKS</span><h2>Balance by bank</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead><tbody>{% for b in banks %}<tr><td>{{ b.bank }}</td><td>{{ b.accounts }}</td><td>{{ b.balance | inr }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article><article class="card table-card mini-table"><div class="section-head"><div><span class="eyebrow">SYSTEM-WIDE</span><h2>Bank distribution</h2></div></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Bank</th><th>Accounts</th><th>Balance</th></tr></thead><tbody>{% for b, count, balance in global_banks %}<tr><td>{{ b }}</td><td>{{ count }}</td><td>{{ balance | inr }}</td></tr>{% else %}<tr><td colspan="3">No rows</td></tr>{% endfor %}</tbody></table></div></article></section>
 {% endblock %}
-{% block extra_js %}
-<script>
-const series = {{ series | tojson }};
-const ctx = document.getElementById('repChart');
-if (ctx && series.length) {
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: series.map(s => s.date),
-      datasets: [
-        { label: 'Success', data: series.map(s => s.success), borderColor: '#7d9a7e', tension: 0.3 },
-        { label: 'Failed', data: series.map(s => s.failed), borderColor: '#c47a72', tension: 0.3 }
-      ]
-    },
-    options: {
-      plugins: { legend: { labels: { color: '#9a9a93' } } },
-      scales: {
-        x: { ticks: { color: '#9a9a93' }, grid: { display: false } },
-        y: { ticks: { color: '#9a9a93' }, grid: { color: 'rgba(255,255,255,.06)' } }
-      }
-    }
-  });
-}
-</script>
-{% endblock %}
+{% block extra_js %}<script>const series = {{ series | tojson }}; const ctx = document.getElementById('repChart'); if (ctx) { new Chart(ctx, { type: 'line', data: { labels: series.map(s => s.date.slice(5)), datasets: [{ label: 'Success', data: series.map(s => s.success), borderColor: '#41e6c4', backgroundColor: 'rgba(65,230,196,.06)', fill: true, tension: .35, borderWidth: 2 }, { label: 'Failed', data: series.map(s => s.failed), borderColor: '#ff6f6f', backgroundColor: 'rgba(255,111,111,.04)', fill: true, tension: .35, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#93a0ad', usePointStyle: true } } }, scales: { x: { ticks: { color: '#6f7b87', maxTicksLimit: 8 }, grid: { display: false } }, y: { ticks: { color: '#6f7b87' }, grid: { color: 'rgba(255,255,255,.06)' } } } } }); }</script>{% endblock %}

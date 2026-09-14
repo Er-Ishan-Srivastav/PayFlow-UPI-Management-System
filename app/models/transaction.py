@@ -13,7 +13,7 @@ class Transaction(db.Model):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     txn_type = db.Column(db.String(10), default="PAY")
     status = db.Column(db.String(10), default="PENDING", index=True)
-    reference_id = db.Column(db.String(20), nullable=False, unique=True, index=True)
+    reference_id = db.Column(db.String(36), nullable=False, unique=True, index=True)
     remarks = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 

@@ -1,44 +1,31 @@
 {% extends "base.html" %}
 {% block title %}UPI IDs · PayFlow{% endblock %}
+{% block breadcrumb %}<span>Manage</span><b>›</b><strong>UPI IDs</strong>{% endblock %}
 {% block content %}
-<div class="page-head"><h1>UPI IDs</h1></div>
-<div class="grid grid-2">
-  <div class="list">
+<section class="hero-row compact-head page-enter"><div><div class="eyebrow">DIGITAL IDENTITY</div><h1>UPI IDs</h1><p class="hero-sub">Create and manage the UPI identities connected to your simulated bank accounts.</p></div></section>
+
+<div class="accounts-layout page-enter delay-1">
+  <div class="upi-cards">
     {% for u in upis %}
-    <div class="row-card">
-      <div>
-        <div class="mono">{{ u.upi_address }}</div>
-        <div class="muted">{{ u.bank_account.bank_name if u.bank_account else '' }}</div>
-      </div>
-      {% if u.is_primary %}
-        <span class="badge ok">Primary</span>
-      {% else %}
-        <form method="post" action="{{ url_for('account.set_primary', pk=u.upi_id_pk) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button class="btn ghost sm" type="submit">Make primary</button>
-        </form>
-      {% endif %}
-    </div>
-    {% else %}
-    <div class="card"><p>No UPI IDs yet.</p></div>
-    {% endfor %}
+    <article class="card upi-card {% if u.is_primary %}primary-upi{% endif %}">
+      <div class="upi-card-top"><div class="upi-symbol large">@</div>{% if u.is_primary %}<span class="status-pill success">Primary</span>{% else %}<span class="status-pill neutral">Secondary</span>{% endif %}</div>
+      <div class="upi-address mono">{{ u.upi_address }}</div>
+      <div class="upi-linked">{{ u.bank_account.bank_name if u.bank_account else 'Linked account' }}</div>
+      {% if not u.is_primary %}<form method="post" action="{{ url_for('account.set_primary', pk=u.upi_id_pk) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary sm" type="submit">Make primary</button></form>{% endif %}
+    </article>
+    {% else %}<article class="card empty-state large"><div class="empty-icon">@</div><strong>No UPI IDs yet</strong><span>Create one from a linked bank account.</span></article>{% endfor %}
   </div>
-  <div class="card">
-    <h3>Create UPI ID</h3>
-    {% if not accounts %}
-      <p>Link a bank account first.</p>
-      <a class="btn" href="{{ url_for('account.banks') }}">Link bank</a>
-    {% else %}
-    <form method="post">
-      {{ form.hidden_tag() }}
-      {{ form.handle.label }}{{ form.handle(placeholder="yourname") }}
-      {{ form.provider.label }}{{ form.provider() }}
-      {{ form.account_id.label }}{{ form.account_id() }}
-      {{ form.pin.label }}{{ form.pin() }}
-      <label>{{ form.is_primary() }} Set as primary</label>
-      {{ form.submit(class="btn full") }}
-    </form>
-    {% endif %}
-  </div>
+
+  <article class="card form-card"><div class="section-head"><div><span class="eyebrow">NEW IDENTITY</span><h2>Create UPI ID</h2></div></div>
+    {% if not accounts %}<div class="empty-state compact"><div class="empty-icon">▣</div><div><strong>Link a bank first</strong><span>You need a linked account before creating a UPI ID.</span></div></div><a class="btn btn-primary full" href="{{ url_for('account.banks') }}">Link bank account</a>
+    {% else %}<form method="post" class="smart-form">{{ form.hidden_tag() }}
+      <div class="field-block"><label>{{ form.handle.label.text }}</label>{{ form.handle(placeholder="yourname") }}</div>
+      <div class="field-block"><label>{{ form.provider.label.text }}</label>{{ form.provider() }}</div>
+      <div class="field-block"><label>{{ form.account_id.label.text }}</label>{{ form.account_id() }}</div>
+      <div class="field-block"><label>{{ form.pin.label.text }}</label>{{ form.pin(placeholder="••••") }}</div>
+      <label class="toggle-row">{{ form.is_primary() }}<span>Set as primary UPI</span></label>
+      <button class="btn btn-primary full" type="submit">Create UPI ID</button>
+    </form>{% endif %}
+  </article>
 </div>
 {% endblock %}

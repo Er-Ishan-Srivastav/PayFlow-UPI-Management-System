@@ -1,22 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Register · PayFlow{% endblock %}
+{% block title %}Create account · PayFlow{% endblock %}
 {% block content %}
-<div class="card auth-card">
-  <h1>Create account</h1>
-  <p class="sub">Register, then link a bank and mint a UPI ID.</p>
-  <form method="post">
-    {{ form.hidden_tag() }}
-    {{ form.full_name.label }}{{ form.full_name() }}
-    {% for e in form.full_name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    {{ form.email.label }}{{ form.email() }}
-    {% for e in form.email.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    {{ form.phone.label }}{{ form.phone() }}
-    {% for e in form.phone.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    {{ form.password.label }}{{ form.password() }}
-    {{ form.confirm_password.label }}{{ form.confirm_password() }}
-    {% for e in form.confirm_password.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
-    {{ form.submit(class="btn full") }}
-  </form>
-  <p>Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
-</div>
+<div class="auth-shell single-auth"><div class="auth-brand"><span class="brand-mark">P</span><span class="brand-word">Pay<span>Flow</span></span></div><div class="auth-card-panel register-panel"><div class="auth-card-head"><div><span class="eyebrow">GET STARTED</span><h2>Create your account</h2><p>Set up your simulated financial workspace.</p></div></div><form method="post" class="smart-form auth-form">{{ form.hidden_tag() }}<div class="field-block"><label>{{ form.full_name.label.text }}</label>{{ form.full_name(placeholder="Your full name") }}{% for e in form.full_name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}</div><div class="form-grid"><div class="field-block"><label>{{ form.email.label.text }}</label>{{ form.email(placeholder="you@example.com") }}{% for e in form.email.errors %}<div class="field-error">{{ e }}</div>{% endfor %}</div><div class="field-block"><label>{{ form.phone.label.text }}</label>{{ form.phone(placeholder="9876543210") }}{% for e in form.phone.errors %}<div class="field-error">{{ e }}</div>{% endfor %}</div></div><div class="form-grid"><div class="field-block"><label>{{ form.password.label.text }}</label>{{ form.password(placeholder="Create password") }}</div><div class="field-block"><label>{{ form.confirm_password.label.text }}</label>{{ form.confirm_password(placeholder="Repeat password") }}{% for e in form.confirm_password.errors %}<div class="field-error">{{ e }}</div>{% endfor %}</div></div>{{ form.submit(class="btn btn-primary btn-xl full") }}</form><p class="auth-switch">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p></div></div>
 {% endblock %}
